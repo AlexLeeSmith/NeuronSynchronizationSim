@@ -6,9 +6,9 @@
  */
 
 /** Preprocessor Directives **/
-#include <stdio.h>      // printf(), puts(), fprintf(), stderr
+#include <stdio.h>      // printf()
 #include <math.h>       // ceil()
-#include <stdlib.h>     // exit(), EXIT_SUCCESS, EXIT_FAILURE, malloc(), free()
+#include <stdlib.h>     // exit(), EXIT_SUCCESS
 
 /** Structures **/
 typedef struct {
