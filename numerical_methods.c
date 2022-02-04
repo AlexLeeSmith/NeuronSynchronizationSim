@@ -26,10 +26,11 @@ float dydx1(float x, float y) {return x + y;}
 float dydx2(float x, float y) {return x * x;}
 float dydx3(float x, float y) {return x + y + x * y;}
 float dydx4(float x, float y) {return (x - y) / 2;}
+float dydx5(float x, float y) {return exp(x);}
 
 int main(int argc, char const *argv[]) {
-    float x0 = 0.0, y0 = 1.0, xEnd = 1.0, step = 0.2;
-    float (*dydx)(float, float) = &dydx1;
+    float x0 = 0.0, y0 = 1.0, xEnd = 4.0, step = 1.0;
+    float (*dydx)(float, float) = &dydx5;
 
     runEulers(dydx, x0, y0, xEnd, step);
     runRungeKutta(dydx, x0, y0, xEnd, step);
@@ -56,13 +57,13 @@ Solution runEulers(float (*dydx)(float, float), float x0, float y0, float xEnd, 
     sol.x = tempX;
     sol.approx[0] = y0;
     sol.x[0] = x0;
-    printf("Euler's: x0 = %f, y0 = %f, xEnd = %f, step = %f\n", x0, y0, xEnd, step);
+    //printf("Euler's: x0 = %f, y0 = %f, xEnd = %f, step = %f\n", x0, y0, xEnd, step);
 
-    printf("(%f, %f)\n", sol.x[0], sol.approx[0]);
+    printf("%f\t%f\n", sol.x[0], sol.approx[0]);
     for (int i = 0; i < sol.size; ++i) {
         sol.approx[i + 1] = sol.approx[i] + step * (*dydx)(sol.x[i], sol.approx[i]);
         sol.x[i + 1] = sol.x[i] + step;
-        printf("(%f, %f)\n", sol.x[i + 1], sol.approx[i+1]);
+        printf("%f\t%f\n", sol.x[i + 1], sol.approx[i+1]);
     }
     printf("\n");
     
@@ -88,10 +89,10 @@ Solution runRungeKutta(float (*dydx)(float, float), float x0, float y0, float xE
     sol.x = tempX;
     sol.approx[0] = y0;
     sol.x[0] = x0;
-    printf("Runge-Kutta: x0 = %f, y0 = %f, xEnd = %f, step = %f\n", x0, y0, xEnd, step);
+    //printf("Runge-Kutta: x0 = %f, y0 = %f, xEnd = %f, step = %f\n", x0, y0, xEnd, step);
 
     float k1, k2, k3, k4;
-    printf("(%f, %f)\n", sol.x[0], sol.approx[0]);
+    printf("%f\t%f\n", sol.x[0], sol.approx[0]);
     for (int i = 0; i < sol.size; ++i) {
         k1 = step * (*dydx)(sol.x[i], sol.approx[i]);
         k2 = step * (*dydx)(sol.x[i] + 0.5 * step, sol.approx[i] + 0.5 * k1);
@@ -101,7 +102,7 @@ Solution runRungeKutta(float (*dydx)(float, float), float x0, float y0, float xE
         sol.approx[i + 1] = sol.approx[i] + (k1 + k2 + k2 + k3 + k3 + k4) / 6.0;
 
         sol.x[i + 1] = sol.x[i] + step;
-        printf("(%f, %f)\n", sol.x[i + 1], sol.approx[i + 1]);
+        printf("%f\t%f\n", sol.x[i + 1], sol.approx[i+1]);
     }
     printf("\n");
 
