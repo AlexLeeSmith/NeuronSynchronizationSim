@@ -13,10 +13,12 @@
 #include <math.h>       // ceil(), exp()
 #include <stdlib.h>     // exit(), EXIT_SUCCESS, EXIT_FAILURE, malloc(), free()
 #include <string.h>     // strcmp()
+#include <sys/time.h>   // timeval, gettimeofday()
 
 #define xR -1.56F
 #define r 0.006F
 #define I 3.1F
+
 
 /** Global Variables **/
 float s = 4.2;
@@ -27,6 +29,7 @@ typedef struct {
     float xEnd;
     float *inits;
     float step;
+    float transient;
 } EqConditions;
 
 typedef struct {
@@ -40,18 +43,22 @@ typedef struct {
     void (*numericalMethod)(float *(*)(float [], float), EqConditions *, EqSolution *);
 } myArgs;
 
+
 /** Forward Declarations **/
 myArgs getArgs(int, char const *[]);
 void usage(const char *);
 void runEulers(float *(*)(float [], float), EqConditions *, EqSolution *);
 void runRungeKutta(float *(*)(float [], float), EqConditions *, EqSolution *);
-void printSolution(float [], float [], int);
+void printSolution(float [], float [], int, float);
+double getTime();
 void freeEqSolution(EqSolution *);
 float *getExp(float [], float);
 float *getHR(float [], float);
 
+
 /** Functions **/
 int main(int argc, char const *argv[]) {
+    double start, elapsed;
     myArgs args;
 
     // Read command line parameters.
@@ -60,9 +67,10 @@ int main(int argc, char const *argv[]) {
     // Initialize condition and solution structures.
     EqConditions cond = {
         .x0 = 0.0, 
-        .xEnd = 500.0, 
+        .xEnd = 2000.0, 
         .inits = (float[]){0.0, 0.0, 0.0},
-        .step = 0.1
+        .step = 0.1,
+        .transient = 900.0
     };
     int stepCount = ceil((cond.xEnd - cond.x0) / cond.step);
     int numBytes = stepCount * sizeof(float);
@@ -74,10 +82,13 @@ int main(int argc, char const *argv[]) {
     };
     
     // Run the numerical method.
+    start = getTime();
     args.numericalMethod(&getHR, &cond, &sol);
+    elapsed = getTime() - start;
 
-    // Print results.
-    printSolution(sol.approx[0], sol.x, sol.stepCount);
+    // Print timing and approximations.
+    fprintf(stderr, "Elapsed: %f seconds\n", elapsed);
+    printSolution(sol.approx[0], sol.x, sol.stepCount, cond.transient);
 
     // Free heap memory and exit.
     freeEqSolution(&sol);
@@ -85,7 +96,7 @@ int main(int argc, char const *argv[]) {
 }
 
 /**
- * Get the command line arguments.
+ * @brief Get the command line arguments.
  * 
  * @param argc the number of arguments
  * @param argv the array of arguments
@@ -222,15 +233,34 @@ void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSol
 /**
  * @brief prints the ODE approximation for each step. 
  * 
- * @param approx an array of approximations
- * @param x an array of steps
- * @param stepCount the number of steps (i.e., size of the two prior arrays - 1)
+ * @param approx an array of approximations.
+ * @param x an array of steps.
+ * @param stepCount the number of steps (i.e., size of the two prior arrays - 1).
+ * @param transient the x value to begin printing from.
  */
-void printSolution(float approx[], float x[], int stepCount) {
-    for (int i = 0; i <= stepCount; i++) {
-        printf("%f\t%f\n", x[i], approx[i]);
+void printSolution(float approx[], float x[], int stepCount, float transient) {
+    // Find the point to start printing from.
+    int start = 0;
+    for (int i = 0; i <= stepCount && !start; ++i) {
+        if (x[i] >= transient) {
+            start = i;
+        }        
+    }
+
+    // Begin printing.
+    for (int i = 0, j = start; j <= stepCount; ++i, ++j) {
+        printf("%f\t%f\n", x[i], approx[j]);   
     }
     printf("\n");
+}
+
+/**
+ * @brief Gets the current time in seconds.
+ */
+double getTime(){
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return t.tv_sec + t.tv_usec/1000000.0;
 }
 
 /**
