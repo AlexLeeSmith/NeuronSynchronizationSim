@@ -1,139 +1,17 @@
 /**
- * This program implements multiple numerical methods for solving ordinary differential equations (ODE).
- * 
- * Usage: numerical_methods [Method]
- * Methods: Eulers, RungeKutta
+ * This file implements the numerical methods header file.
  * 
  * @author Alex Smith (alsmi14@ilstu.edu)
  * @date 1/30/22
  */
 
 /** Preprocessor Directives **/
+#include "numerical_methods.h"
+
 #include <stdio.h>      // printf()
-#include <math.h>       // ceil(), exp()
-#include <stdlib.h>     // exit(), EXIT_SUCCESS, EXIT_FAILURE, malloc(), free()
-#include <string.h>     // strcmp()
-#include <sys/time.h>   // timeval, gettimeofday()
-
-#define xR -1.56F
-#define r 0.006F
-#define I 3.1F
-
-
-/** Global Variables **/
-float s = 4.2;
-
-/** Structures **/
-typedef struct {
-    float x0;
-    float xEnd;
-    float *inits;
-    float step;
-    float transient;
-} EqConditions;
-
-typedef struct {
-    float **approx;
-    float *x;
-    int funcCount;
-    int stepCount;
-} EqSolution;
-
-typedef struct {
-    void (*numericalMethod)(float *(*)(float [], float), EqConditions *, EqSolution *);
-} myArgs;
-
-
-/** Forward Declarations **/
-myArgs getArgs(int, char const *[]);
-void usage(const char *);
-void runEulers(float *(*)(float [], float), EqConditions *, EqSolution *);
-void runRungeKutta(float *(*)(float [], float), EqConditions *, EqSolution *);
-void printSolution(float [], float [], int, float);
-double getTime();
-void freeEqSolution(EqSolution *);
-float *getExp(float [], float);
-float *getHR(float [], float);
-
+#include <stdlib.h>     // free()
 
 /** Functions **/
-int main(int argc, char const *argv[]) {
-    double start, elapsed;
-    myArgs args;
-
-    // Read command line parameters.
-    args = getArgs(argc, argv);
-
-    // Initialize condition and solution structures.
-    EqConditions cond = {
-        .x0 = 0.0, 
-        .xEnd = 2000.0, 
-        .inits = (float[]){0.0, 0.0, 0.0},
-        .step = 0.1,
-        .transient = 900.0
-    };
-    int stepCount = ceil((cond.xEnd - cond.x0) / cond.step);
-    int numBytes = stepCount * sizeof(float);
-    EqSolution sol = {
-        .approx = (float *[]){malloc(numBytes), malloc(numBytes), malloc(numBytes)},
-        .x = malloc(numBytes),
-        .funcCount = 3,
-        .stepCount = stepCount
-    };
-    
-    // Run the numerical method.
-    start = getTime();
-    args.numericalMethod(&getHR, &cond, &sol);
-    elapsed = getTime() - start;
-
-    // Print timing and approximations.
-    fprintf(stderr, "Elapsed: %f seconds\n", elapsed);
-    printSolution(sol.approx[0], sol.x, sol.stepCount, cond.transient);
-
-    // Free heap memory and exit.
-    freeEqSolution(&sol);
-    exit(EXIT_SUCCESS);
-}
-
-/**
- * @brief Get the command line arguments.
- * 
- * @param argc the number of arguments
- * @param argv the array of arguments
- * @return the command line arguments in their correct data types
- */
-myArgs getArgs(int argc, char const *argv[]) {
-    myArgs args;
-
-    // Verify the number of arguments.
-    if (argc != 2) 
-        usage(argv[0]);
-    
-    // Verify the numerical method.
-    if (strcmp(argv[1], "eulers") == 0 || strcmp(argv[1], "Eulers") == 0) {
-        args.numericalMethod = &runEulers;
-    }
-    else if (strcmp(argv[1], "rungekutta") == 0 || strcmp(argv[1], "RungeKutta") == 0) {
-        args.numericalMethod = &runRungeKutta;
-    }
-    else {
-        usage(argv[0]);
-    }     
-    
-    return args;
-} 
-
-/**
- * Prints a message to stderr explaining how to run the program.
- * 
- * @param prog_name the name of the executable file
- */
-void usage(const char *prog_name) {
-    fprintf(stderr, "\nUsage: %s [Method]\n", prog_name);
-    fprintf(stderr, "\tMethods: Eulers, RungeKutta\n\n");
-    exit(EXIT_FAILURE);
-}
-
 /**
  * @brief Runs Euler's first-order numerical method for approximating ODEs.
  * 
@@ -252,60 +130,4 @@ void printSolution(float approx[], float x[], int stepCount, float transient) {
         printf("%f\t%f\n", x[i], approx[j]);   
     }
     printf("\n");
-}
-
-/**
- * @brief Gets the current time in seconds.
- */
-double getTime(){
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    return t.tv_sec + t.tv_usec/1000000.0;
-}
-
-/**
- * @brief releases the heap memory allocated to a solution struture.
- * 
- * @param sol the solution struture to be freed.
- */
-void freeEqSolution(EqSolution *sol) {
-    for (int i = 0; i < sol->funcCount; ++i) {
-        free(sol->approx[i]);
-    }
-    free(sol->x);
-}
-
-/**
- * @brief ODE containing an exponential.
- * 
- * @param inputs an array of inputs used to evaluate the ODEs.
- * @param curX the current x coordinate.
- * @return float* a static array of results from evaluating the ODEs.
- */
-float *getExp(float inputs[], float curX) {
-    static float slopes[1];
-
-    slopes[0] = exp(curX);
-
-    return slopes;
-}
-
-/**
- * @brief Hindmarsh-Rose (HR) neuronal model.
- * 
- * @param inputs an array of inputs used to evaluate the ODEs.
- * @param curX the current x coordinate.
- * @return float* a static array of results from evaluating the ODEs.
- */
-float *getHR(float inputs[], float curX) {
-    static float slopes[3];
-    float x = inputs[0];    // Voltage
-    float y = inputs[1];    // Spiking
-    float z = inputs[2];    // Bursting
-
-    slopes[0] = y - (x*x*x) + (3*x*x) - z + I;
-    slopes[1] = 1 - (5*x*x) - y;
-    slopes[2] = r * (s * (x - xR) - z);
-
-    return slopes;
 }

@@ -8,13 +8,27 @@ BIN=Bin/
 OUT=Out/
 FLAGS=-g -Wall
 
+allclean:all cleanObject
+
+all:numerical spike main
+	$(CC) $(FLAGS) numerical_methods.o spike_calculations.o main.o -o $(BIN)main $(LIBS)
+
 numerical:numerical_methods.c
-	$(CC) $(FLAGS) -o $(BIN)numerical_methods numerical_methods.c $(LIBS)
+	$(CC) -c numerical_methods.c 
 
-clean:cleanNumerical cleanRunApproximation
+spike:spike_calculations.c
+	$(CC) -c spike_calculations.c 
 
-cleanNumerical:
-	$(RM) $(BIN)numerical_methods
+main:main.c
+	$(CC) -c main.c
 
-cleanRunApproximation:cleanNumerical
+clean:cleanObject cleanMain cleanRunApproximation
+
+cleanObject:
+	$(RM) numerical_methods.o spike_calculations.o main.o
+
+cleanMain:
+	$(RM) $(BIN)main
+
+cleanRunApproximation:
 	$(RM) $(OUT)numerical_out
