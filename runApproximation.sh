@@ -9,14 +9,13 @@ then
     binFolder='Bin'
     outFolder='Out'
     plotFolder='Plot'
-    numericalBin=$binFolder/'numerical_methods'
-    numericalOut=$outFolder/"numerical_out"
+    mainBin=$binFolder/'main'
+    mainOut=$outFolder/"runApproximation"
     imagePlot=$plotFolder/$3
 
-    make cleanRunApproximation
-    make numerical
+    make allclean
 
-    ./$numericalBin $1 > $numericalOut
+    ./$mainBin $1 > $mainOut
     gnuplot -c $2 $imagePlot $1
 else
     printf "\n\tUsage: ./runApproximation.sh [Method] [plotScript.p] [imageName.png]\n"

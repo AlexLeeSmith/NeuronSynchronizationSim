@@ -15,8 +15,8 @@ typedef struct {
 } EqConditions;
 
 typedef struct {
-    float **approx;
     float *x;
+    float **approx;
     int funcCount;
     int stepCount;
 } EqSolution;
@@ -24,7 +24,7 @@ typedef struct {
 /** Forward Declarations **/
 void runEulers(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol);
 void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol);
-void printSolution(float approx[], float x[], int stepCount, float transient);
+void printSolution(float x[], float approx[], int stepCount, float transient);
 void freeEqSolution(EqSolution *sol);
 
 #endif

@@ -111,22 +111,22 @@ void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSol
 /**
  * @brief prints the ODE approximation for each step. 
  * 
- * @param approx an array of approximations.
  * @param x an array of steps.
- * @param stepCount the number of steps (i.e., size of the two prior arrays - 1).
+ * @param approx an array of approximations.
+ * @param size the size of the x and approx arrays.
  * @param transient the x value to begin printing from.
  */
-void printSolution(float approx[], float x[], int stepCount, float transient) {
+void printSolution(float x[], float approx[], int size, float transient) {
     // Find the point to start printing from.
     int start = 0;
-    for (int i = 0; i <= stepCount && !start; ++i) {
+    for (int i = 0; i < size && !start; ++i) {
         if (x[i] >= transient) {
             start = i;
         }        
     }
 
     // Begin printing.
-    for (int i = 0, j = start; j <= stepCount; ++i, ++j) {
+    for (int i = 0, j = start; j < size; ++i, ++j) {
         printf("%f\t%f\n", x[i], approx[j]);   
     }
     printf("\n");

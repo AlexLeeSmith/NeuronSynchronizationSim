@@ -23,7 +23,7 @@
 #define I 3.1F
 
 /** Global Variables **/
-float s = 4.2;
+float s = 3.6;
 
 /** Structures **/
 typedef struct {
@@ -64,9 +64,9 @@ int main(int argc, char const *argv[]) {
     };
     Points spikes = { 
         .x = malloc(numBytes),
-        .y = malloc(numBytes), 
-        .size = size
+        .y = malloc(numBytes)
     };
+    float *intervals = (float *) malloc(numBytes);
     
     // Run the numerical method.
     start = getTime();
@@ -75,10 +75,24 @@ int main(int argc, char const *argv[]) {
 
     // Print timing and approximations.
     fprintf(stderr, "Elapsed: %f seconds\n", elapsed);
-    printSolution(sol.approx[0], sol.x, sol.stepCount, cond.transient);
+    //printSolution(sol.x, sol.approx[0], size, cond.transient);
+
+    findSpikes(&spikes, sol.x, sol.approx[0], size, cond.transient);
+    printf("avefq: %f\n", getAveFrequency(spikes.size, cond.transient, cond.xEnd, 1000.0));
+    // for (int i = 0; i < spikes.size; i++) {
+    //     printf("%f\t%f\n", spikes.x[i], spikes.y[i]);
+    // }
+
+    getInterSpikeIntervals(&spikes, intervals);
+    // intervals = realloc(intervals, spikes.size - 1);
+    // for (int i = 0; i < spikes.size - 1; i++) {
+    //     printf("%f\n", intervals[i]);
+    // }    
 
     // Free heap memory and exit.
     freeEqSolution(&sol);
+    freePoints(&spikes);
+    free(intervals);
     exit(EXIT_SUCCESS);
 }
 
