@@ -141,3 +141,15 @@ void writeSolution(char filename[], float x[], float approx[], int size, float t
     // Close ouput file.
     fclose(outfile);
 }
+
+/**
+ * @brief Frees the heap memory allocated to a EqSolution struture.
+ * 
+ * @param sol the EqSolution struture to be freed.
+ */
+void freeEqSolution(EqSolution *sol) {
+    for (int i = 0; i < sol->funcCount; ++i) {
+        free(sol->approx[i]);
+    }
+    free(sol->x);
+}

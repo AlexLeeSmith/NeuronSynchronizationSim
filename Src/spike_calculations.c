@@ -92,9 +92,9 @@ int getInterSpikeIntervals(Points *spikes, float intervals[]) {
  * @brief Writes a set of points to a file.
  * 
  * @param filename the name of the file to write to.
- * @param spikes the Points struture where the spikes are stored.
+ * @param points the Points struture to be written.
  */
-void writePoints(char filename[], Points *spikes) {
+void writePoints(char filename[], Points *points) {
     // Open output file for writing.
     FILE *outfile;
     if ((outfile = fopen(filename, "w")) == NULL) {
@@ -103,14 +103,21 @@ void writePoints(char filename[], Points *spikes) {
     }
 
     // Begin writing.
-    for (int i = 0; i < spikes->size; i++) {
-        fprintf(outfile, "%f\t%f\n", spikes->x[i], spikes->y[i]);
+    for (int i = 0; i < points->size; i++) {
+        fprintf(outfile, "%f\t%f\n", points->x[i], points->y[i]);
     }
 
     // Close ouput file.
     fclose(outfile);
 }
 
+/**
+ * @brief Writes an array of intervals to a file.
+ * 
+ * @param filename the name of the file to write to.
+ * @param intervals the array of intervals to be written.
+ * @param size the size of the intervals array.
+ */
 void writeInterSpikeIntervals(char filename[], float *intervals, int size) {
     // Open output file for writing.
     FILE *outfile;
@@ -128,7 +135,12 @@ void writeInterSpikeIntervals(char filename[], float *intervals, int size) {
     fclose(outfile);
 }
 
-void freePoints(Points *spikes) {
-    free(spikes->x);
-    free(spikes->y);
+/**
+ * @brief Frees the heap memory allocated to a Points struture.
+ * 
+ * @param points the Points struture to be freed.
+ */
+void freePoints(Points *points) {
+    free(points->x);
+    free(points->y);
 }
