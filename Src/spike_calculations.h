@@ -15,7 +15,9 @@ typedef struct {
 /** Forward Declarations **/
 void findSpikes(Points *spikes, float x[], float y[], int size, float transient);
 double getAveFrequency(int spikeCount, int transient, int xEnd, float scale);
-void getInterSpikeIntervals(Points *spikes, float intervals[]);
+int getInterSpikeIntervals(Points *spikes, float intervals[]);
+void writePoints(char filename[], Points *spikes);
+void writeInterSpikeIntervals(char filename[], float *intervals, int size);
 void freePoints(Points *spikes);
 
 #endif

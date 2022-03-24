@@ -8,8 +8,8 @@
 /** Preprocessor Directives **/
 #include "numerical_methods.h"
 
-#include <stdio.h>      // printf()
-#include <stdlib.h>     // free()
+#include <stdio.h>      // fprintf(), FILE, fopen(), fclose(), perror()
+#include <stdlib.h>     // EXIT_FAILURE
 
 /** Functions **/
 /**
@@ -109,14 +109,15 @@ void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSol
 }
 
 /**
- * @brief prints the ODE approximation for each step. 
+ * @brief writes the ODE approximation for each step to a file. 
  * 
+ * @param filename the name of the file to write to.
  * @param x an array of steps.
  * @param approx an array of approximations.
  * @param size the size of the x and approx arrays.
  * @param transient the x value to begin printing from.
  */
-void printSolution(float x[], float approx[], int size, float transient) {
+void writeSolution(char filename[], float x[], float approx[], int size, float transient) {
     // Find the point to start printing from.
     int start = 0;
     for (int i = 0; i < size && !start; ++i) {
@@ -125,9 +126,18 @@ void printSolution(float x[], float approx[], int size, float transient) {
         }        
     }
 
-    // Begin printing.
-    for (int i = 0, j = start; j < size; ++i, ++j) {
-        printf("%f\t%f\n", x[i], approx[j]);   
+    // Open output file for writing.
+    FILE *outfile;
+    if ((outfile = fopen(filename, "w")) == NULL) {
+        perror("Write Solution");
+        exit(EXIT_FAILURE);
     }
-    printf("\n");
+
+    // Begin writing.
+    for (int i = 0, j = start; j < size; ++i, ++j) {
+        fprintf(outfile, "%f\t%f\n", x[i], approx[j]);   
+    }
+
+    // Close ouput file.
+    fclose(outfile);
 }

@@ -8,7 +8,8 @@
 /** Preprocessor Directives **/
 #include "spike_calculations.h"
 
-#include <stdlib.h>     // free()
+#include <stdio.h>      // fprintf(), FILE, fopen(), fclose(), perror()
+#include <stdlib.h>     // EXIT_FAILURE
 
 /** Functions **/
 /**
@@ -70,10 +71,61 @@ double getAveFrequency(int spikeCount, int transient, int xEnd, float scale) {
     return ((double) spikeCount / (xEnd - transient)) * scale;
 }
 
-void getInterSpikeIntervals(Points *spikes, float intervals[]) {
+/**
+ * @brief Finds the inter-spike intervals within the given set of spikes.
+ * 
+ * @param spikes the Points struture where the spikes are stored.
+ * @param intervals the buffer array to store the intervals in.
+ * 
+ * @return the amount of intervals found.
+ */
+int getInterSpikeIntervals(Points *spikes, float intervals[]) {
+    // Find the difference between each spike's x value.
     for (int i = 0; i < spikes->size - 1; ++i) {
         intervals[i] = spikes->x[i+1] - spikes->x[i];
     }
+
+    return spikes->size - 1;
+}
+
+/**
+ * @brief Writes a set of points to a file.
+ * 
+ * @param filename the name of the file to write to.
+ * @param spikes the Points struture where the spikes are stored.
+ */
+void writePoints(char filename[], Points *spikes) {
+    // Open output file for writing.
+    FILE *outfile;
+    if ((outfile = fopen(filename, "w")) == NULL) {
+        perror("Write Points");
+        exit(EXIT_FAILURE);
+    }
+
+    // Begin writing.
+    for (int i = 0; i < spikes->size; i++) {
+        fprintf(outfile, "%f\t%f\n", spikes->x[i], spikes->y[i]);
+    }
+
+    // Close ouput file.
+    fclose(outfile);
+}
+
+void writeInterSpikeIntervals(char filename[], float *intervals, int size) {
+    // Open output file for writing.
+    FILE *outfile;
+    if ((outfile = fopen(filename, "w")) == NULL) {
+        perror("Write InterSpike Intervals");
+        exit(EXIT_FAILURE);
+    }
+
+    // Begin writing.
+    for (int i = 0; i < size; i++) {
+        fprintf(outfile, "%f\n", intervals[i]);
+    }  
+
+    // Close ouput file.
+    fclose(outfile);
 }
 
 void freePoints(Points *spikes) {
