@@ -19,29 +19,29 @@
  * @param cond a structure containing the input conditions.
  * @param sol a struture where the solution will be stored.
  */
-void runEulers(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol) {
-    // Assign initial values for each function and x.
-    float inputs[sol->funcCount];
-    for (int i = 0; i < sol->funcCount; ++i) {
-        sol->approx[i][0] = cond->inits[i];
-        inputs[i] = cond->inits[i];
-    }
-    sol->x[0] = cond->x0;
+// void runEulers(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol) {
+//     // Assign initial values for each function and x.
+//     float inputs[sol->funcCount];
+//     for (int i = 0; i < sol->funcCount; ++i) {
+//         sol->approx[i][0] = cond->inits[i];
+//         inputs[i] = cond->inits[i];
+//     }
+//     sol->x[0] = cond->x0;
     
-    // Begin Euler's method.
-    float *slopes;
-    for (int curStep = 0; curStep < sol->stepCount; ++curStep) {
-        slopes = getODEs(inputs, sol->x[curStep]);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            // Calculate the next step for this function.
-            sol->approx[curFunc][curStep + 1] = sol->approx[curFunc][curStep] + cond->step * slopes[curFunc];
+//     // Begin Euler's method.
+//     float *slopes;
+//     for (int curStep = 0; curStep < sol->stepCount; ++curStep) {
+//         slopes = getODEs(inputs, sol->x[curStep]);
+//         for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+//             // Calculate the next step for this function.
+//             sol->approx[curFunc][curStep + 1] = sol->approx[curFunc][curStep] + cond->step * slopes[curFunc];
 
-            // Update the input for the next step.
-            inputs[curFunc] = sol->approx[curFunc][curStep + 1];
-        }
-        sol->x[curStep + 1] = sol->x[curStep] + cond->step;
-    }
-}
+//             // Update the input for the next step.
+//             inputs[curFunc] = sol->approx[curFunc][curStep + 1];
+//         }
+//         sol->x[curStep + 1] = sol->x[curStep] + cond->step;
+//     }
+// }
 
 /**
  * @brief Runs the fourth-order Runge-Kutta numerical method for approximating ODEs.
@@ -52,56 +52,71 @@ void runEulers(float *(*getODEs)(float [], float), EqConditions *cond, EqSolutio
  */
 void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol) {
     // Assign initial values for each function and x.
-    float inputs[sol->funcCount];
+    float inputs[2][sol->funcCount + 2]; // plus 2 to add coupling and different s
     for (int i = 0; i < sol->funcCount; ++i) {
-        sol->approx[i][0] = cond->inits[i];
-        inputs[i] = cond->inits[i];
+        sol->approx[0][i][0] = cond->inits[i];
+        sol->approx[1][i][0] = cond->inits[i];
+        inputs[0][i] = cond->inits[i];
+        inputs[1][i] = cond->inits[i];
     }
+    inputs[0][sol->funcCount] = 3.6;
+    inputs[1][sol->funcCount] = 4.2;
+    inputs[0][sol->funcCount + 1] = 0.0;
+    inputs[1][sol->funcCount + 1] = 0.0;
     sol->x[0] = cond->x0;
     
     // Begin Runge-Kutta method.
-    float k[4][sol->funcCount], *slopes;
+    float k[4][2][sol->funcCount], *slopes[2];
     for (int curStep = 0; curStep < sol->stepCount; ++curStep) {
-        // Calculate k1 for each function
-        slopes = getODEs(inputs, sol->x[curStep]);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[0][curFunc] = cond->step * slopes[curFunc];
-        }
+        for (int neuron = 0; neuron < 2; ++neuron) {
+            // Calculate k1-4 for each function.
+            for (int curK = 0; curK < 4; ++curK) {
+                // Calculate inputs.
+                for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+                    switch (curK) {
+                        case 1:
+                            inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep] + 0.5 * k[0][neuron][curFunc];
+                            break;
+                        case 2:
+                            inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep] + 0.5 * k[1][neuron][curFunc];
+                            break;
+                        case 3:
+                            inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep] + k[2][neuron][curFunc];
+                            break;
+                    }
+                }                      
+                
+                // Calculate curX.
+                float curX = sol->x[curStep];
+                switch (curK) {
+                    case 1:
+                    case 2:
+                        curX += 0.5 * cond->step;
+                        break;
+                    case 3:
+                        curX += cond->step;
+                        break;
+                }
 
-        // Calculate k2 for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            inputs[curFunc] = sol->approx[curFunc][curStep] + 0.5 * k[0][curFunc];
-        }
-        slopes = getODEs(inputs, sol->x[curStep] + 0.5 * cond->step);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[1][curFunc] = cond->step * slopes[curFunc];
-        }
+                // Calculate slopes.
+                slopes[neuron] = getODEs(inputs[neuron], curX);
 
-        // Calculate k3 for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            inputs[curFunc] = sol->approx[curFunc][curStep] + 0.5 * k[1][curFunc];
-        }
-        slopes = getODEs(inputs, sol->x[curStep] + 0.5 * cond->step);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[2][curFunc] = cond->step * slopes[curFunc];
-        }
+                // Calculate curK.
+                for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+                    k[curK][neuron][curFunc] = cond->step * slopes[neuron][curFunc];
+                }
+            }
 
-        // Calculate k4 for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            inputs[curFunc] = sol->approx[curFunc][curStep] + k[2][curFunc];
-        }
-        slopes = getODEs(inputs, sol->x[curStep] + cond->step);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[3][curFunc] = cond->step * slopes[curFunc];
-        }
+            // Calculate approximation for each function.
+            for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+                sol->approx[neuron][curFunc][curStep + 1] = sol->approx[neuron][curFunc][curStep] + (k[0][neuron][curFunc] + k[1][neuron][curFunc] + k[1][neuron][curFunc] + k[2][neuron][curFunc] + k[2][neuron][curFunc] + k[3][neuron][curFunc]) / 6.0;
 
-        // Calculate approximation for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            sol->approx[curFunc][curStep + 1] = sol->approx[curFunc][curStep] + (k[0][curFunc] + k[1][curFunc] + k[1][curFunc] + k[2][curFunc] + k[2][curFunc] + k[3][curFunc]) / 6.0;
-            
-            // Update the input for the next step.
-            inputs[curFunc] = sol->approx[curFunc][curStep + 1];
-        }
+                // Update the input for the next step.
+                inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep + 1];
+            }
+        }        
+        inputs[0][sol->funcCount + 1] = sol->approx[1][0][curStep];
+        inputs[1][sol->funcCount + 1] = sol->approx[0][0][curStep];
         
         // Calculate next step in the x direction.
         sol->x[curStep + 1] = sol->x[curStep] + cond->step;        
@@ -149,7 +164,8 @@ void writeSolution(char filename[], float x[], float approx[], int size, float t
  */
 void freeEqSolution(EqSolution *sol) {
     for (int i = 0; i < sol->funcCount; ++i) {
-        free(sol->approx[i]);
+        free(sol->approx[0][i]);
+        free(sol->approx[1][i]);
     }
     free(sol->x);
 }

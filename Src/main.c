@@ -18,12 +18,13 @@
 #include <math.h>       // ceil(), exp()
 #include <stdlib.h>     // exit(), EXIT_SUCCESS, EXIT_FAILURE, malloc(), free(), strtod()
 #include <sys/time.h>   // timeval, gettimeofday()
-#include <string.h>     // strcmp(), strstr()
+#include <string.h>     // strstr()
 
 #define FUNC_COUNT 3    // MAKE SURE TO CHANGE THIS BEFORE SWAPPING THE getODEs() FUNCTION.
 #define xR -1.56F
 #define r 0.006F
 #define I 3.1F
+#define gc 0.0F
 
 /** Global Variables **/
 float s = 3.6;          // Default value.
@@ -57,42 +58,53 @@ int main(int argc, char const *argv[]) {
         .funcCount = FUNC_COUNT,
         .stepCount = stepCount
     };
-    float *temp[FUNC_COUNT];
+    float *temp1[FUNC_COUNT];
+    float *temp2[FUNC_COUNT];
     for (int i = 0; i < FUNC_COUNT; i++) {
-        temp[i] = (float *) malloc(numBytes);
+        temp1[i] = (float *) malloc(numBytes);
+        temp2[i] = (float *) malloc(numBytes);
     }
-    sol.approx = temp;
+    sol.approx[0] = temp1;
+    sol.approx[1] = temp2;
     
     // Initialize Points structure.
-    Points spikes = { 
+    Points spikes1 = { 
+        .x = (float *) malloc(numBytes),
+        .y = (float *) malloc(numBytes)
+    };
+    Points spikes2 = { 
         .x = (float *) malloc(numBytes),
         .y = (float *) malloc(numBytes)
     };
 
     // Allocate intervals array.
-    float *intervals = (float *) malloc(numBytes);
+    //float *intervals = (float *) malloc(numBytes);
     
     // Run calculations.
     start = getTime();
     runRungeKutta(&getHR, &args.cond, &sol);
-    findSpikes(&spikes, sol.x, sol.approx[0], size, args.cond.transient);
-    int isiCount = getInterSpikeIntervals(&spikes, intervals);
+    findSpikes(&spikes1, sol.x, sol.approx[0][0], size, args.cond.transient);
+    findSpikes(&spikes2, sol.x, sol.approx[1][0], size, args.cond.transient);
+    //int isiCount = getInterSpikeIntervals(&spikes, intervals);
     elapsed = getTime() - start;
 
     // Print results.
     printf("Hindmarsh-Rose (HR) neuronal model (s=%g):\n", s);
     printf("\tElapsed: %f seconds\n", elapsed);
-    printf("\tAvg Frequency: %f spikes/sec\n\n", getAveFrequency(spikes.size, args.cond.transient, args.cond.xEnd, 1000.0));
+    //printf("\tAvg Frequency: %f spikes/sec\n\n", getAveFrequency(spikes.size, args.cond.transient, args.cond.xEnd, 1000.0));
 
     // Write calculations.
-    writeSolution("Out/approx", sol.x, sol.approx[0], size, args.cond.transient);
-    writePoints("Out/spikes", &spikes);
-    writeInterSpikeIntervals("Out/ISIs", intervals, isiCount);
+    writeSolution("Out/approx1", sol.x, sol.approx[0][0], size, args.cond.transient);
+    writeSolution("Out/approx2", sol.x, sol.approx[1][0], size, args.cond.transient);
+    writePoints("Out/spikes1", &spikes1);
+    writePoints("Out/spikes2", &spikes2);
+    //writeInterSpikeIntervals("Out/ISIs", intervals, isiCount);
 
     // Free heap memory and exit.
     freeEqSolution(&sol);
-    freePoints(&spikes);
-    free(intervals);
+    freePoints(&spikes1);
+    freePoints(&spikes2);
+    //free(intervals);
     exit(EXIT_SUCCESS);
 }
 
@@ -164,7 +176,7 @@ double getTime(){
  * @param inputs an array of inputs used to evaluate the ODEs.
  * @param curX the current x coordinate.
  * 
- * @return float* a static array of results from evaluating the ODEs.
+ * @return a static array of results from evaluating the ODEs.
  */
 float *getExp(float inputs[], float curX) {
     static float slopes[1];
@@ -180,17 +192,19 @@ float *getExp(float inputs[], float curX) {
  * @param inputs an array of inputs used to evaluate the ODEs.
  * @param curX the current x coordinate.
  * 
- * @return float* a static array of results from evaluating the ODEs.
+ * @return a static array of results from evaluating the ODEs.
  */
 float *getHR(float inputs[], float curX) {
     static float slopes[3];
     float x = inputs[0];    // Voltage
     float y = inputs[1];    // Spiking
     float z = inputs[2];    // Bursting
+    float s1 = inputs[3];
+    float x2 = inputs[4];
 
-    slopes[0] = y - (x*x*x) + (3*x*x) - z + I;
+    slopes[0] = y - (x*x*x) + (3*x*x) - z + I + gc * (x - x2);
     slopes[1] = 1 - (5*x*x) - y;
-    slopes[2] = r * (s * (x - xR) - z);
+    slopes[2] = r * (s1 * (x - xR) - z);
 
     return slopes;
 }
