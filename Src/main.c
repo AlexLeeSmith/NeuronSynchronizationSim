@@ -1,8 +1,10 @@
 /**
  * Main file for running the numerical_methods and spike_cacluations files.
  * 
- * Usage: ./main [Method]
- * Methods: Eulers, RungeKutta
+ * Usage: ./Bin/main [x0] [xEnd] [step] [transient] [Opt: Moderators]
+ *      Moderators: s=
+ * 
+ * Example: ./Bin/main 0 2000 .1 500 s=4.8
  * 
  * @author Alex Smith (alsmi14@ilstu.edu)
  * @date 2/24/22
@@ -12,22 +14,23 @@
 #include "numerical_methods.h"
 #include "spike_calculations.h"
 
-#include <stdio.h>      // printf()
+#include <stdio.h>      // printf(), fprintf()
 #include <math.h>       // ceil(), exp()
-#include <stdlib.h>     // exit(), EXIT_SUCCESS, EXIT_FAILURE, malloc()
+#include <stdlib.h>     // exit(), EXIT_SUCCESS, EXIT_FAILURE, malloc(), free(), strtod()
 #include <sys/time.h>   // timeval, gettimeofday()
-#include <string.h>     // strcmp()
+#include <string.h>     // strcmp(), strstr()
 
+#define FUNC_COUNT 3    // MAKE SURE TO CHANGE THIS BEFORE SWAPPING THE getODEs() FUNCTION.
 #define xR -1.56F
 #define r 0.006F
 #define I 3.1F
 
 /** Global Variables **/
-float s = 3.6;
+float s = 3.6;          // Default value.
 
 /** Structures **/
 typedef struct {
-    void (*numericalMethod)(float *(*)(float [], float), EqConditions *, EqSolution *);
+    EqConditions cond;
 } myArgs;
 
 /** Forward Declarations **/
@@ -45,49 +48,46 @@ int main(int argc, char const *argv[]) {
     // Read command line parameters.
     args = getArgs(argc, argv);
 
-    // Initialize condition and solution structures.
-    EqConditions cond = {
-        .x0 = 0.0, 
-        .xEnd = 2000.0, 
-        .inits = (float[]){0.0, 0.0, 0.0},
-        .step = 0.1,
-        .transient = 900.0
-    };
-    int stepCount = ceil((cond.xEnd - cond.x0) / cond.step);
+    // Initialize EqSolution structure.
+    int stepCount = ceil((args.cond.xEnd - args.cond.x0) / args.cond.step);
     int size = stepCount + 1;
     int numBytes = size * sizeof(float);
     EqSolution sol = {
-        .approx = (float *[]){malloc(numBytes), malloc(numBytes), malloc(numBytes)},
-        .x = malloc(numBytes),
-        .funcCount = 3,
+        .x = (float *) malloc(numBytes),
+        .funcCount = FUNC_COUNT,
         .stepCount = stepCount
     };
+    float *temp[FUNC_COUNT];
+    for (int i = 0; i < FUNC_COUNT; i++) {
+        temp[i] = (float *) malloc(numBytes);
+    }
+    sol.approx = temp;
+    
+    // Initialize Points structure.
     Points spikes = { 
-        .x = malloc(numBytes),
-        .y = malloc(numBytes)
+        .x = (float *) malloc(numBytes),
+        .y = (float *) malloc(numBytes)
     };
+
+    // Allocate intervals array.
     float *intervals = (float *) malloc(numBytes);
     
-    // Run the numerical method.
+    // Run calculations.
     start = getTime();
-    args.numericalMethod(&getHR, &cond, &sol);
+    runRungeKutta(&getHR, &args.cond, &sol);
+    findSpikes(&spikes, sol.x, sol.approx[0], size, args.cond.transient);
+    int isiCount = getInterSpikeIntervals(&spikes, intervals);
     elapsed = getTime() - start;
 
-    // Print timing and approximations.
-    fprintf(stderr, "Elapsed: %f seconds\n", elapsed);
-    //printSolution(sol.x, sol.approx[0], size, cond.transient);
+    // Print results.
+    printf("Hindmarsh-Rose (HR) neuronal model (s=%g):\n", s);
+    printf("\tElapsed: %f seconds\n", elapsed);
+    printf("\tAvg Frequency: %f spikes/sec\n\n", getAveFrequency(spikes.size, args.cond.transient, args.cond.xEnd, 1000.0));
 
-    findSpikes(&spikes, sol.x, sol.approx[0], size, cond.transient);
-    printf("avefq: %f\n", getAveFrequency(spikes.size, cond.transient, cond.xEnd, 1000.0));
-    // for (int i = 0; i < spikes.size; i++) {
-    //     printf("%f\t%f\n", spikes.x[i], spikes.y[i]);
-    // }
-
-    getInterSpikeIntervals(&spikes, intervals);
-    // intervals = realloc(intervals, spikes.size - 1);
-    // for (int i = 0; i < spikes.size - 1; i++) {
-    //     printf("%f\n", intervals[i]);
-    // }    
+    // Write calculations.
+    writeSolution("Out/approx", sol.x, sol.approx[0], size, args.cond.transient);
+    writePoints("Out/spikes", &spikes);
+    writeInterSpikeIntervals("Out/ISIs", intervals, isiCount);
 
     // Free heap memory and exit.
     freeEqSolution(&sol);
@@ -99,27 +99,41 @@ int main(int argc, char const *argv[]) {
 /**
  * @brief Get the command line arguments.
  * 
- * @param argc the number of arguments
- * @param argv the array of arguments
- * @return the command line arguments in their correct data types
+ * @param argc the number of arguments.
+ * @param argv the array of arguments.
+ * 
+ * @return the command line arguments in their correct data types.
  */
 myArgs getArgs(int argc, char const *argv[]) {
     myArgs args;
 
     // Verify the number of arguments.
-    if (argc != 2) 
+    if (argc != 5 && argc != 6) 
         usage(argv[0]);
-    
-    // Verify the numerical method.
-    if (strcmp(argv[1], "eulers") == 0 || strcmp(argv[1], "Eulers") == 0) {
-        args.numericalMethod = &runEulers;
+
+    // Get conditions.
+    args.cond.x0 = strtod(argv[1], NULL);
+    args.cond.xEnd = strtod(argv[2], NULL);
+    args.cond.step = strtod(argv[3], NULL);
+    args.cond.transient = strtod(argv[4], NULL);
+
+    float temp[FUNC_COUNT];
+    for (int i = 0; i < FUNC_COUNT; i++) {
+        temp[i] = 0.0;
     }
-    else if (strcmp(argv[1], "rungekutta") == 0 || strcmp(argv[1], "RungeKutta") == 0) {
-        args.numericalMethod = &runRungeKutta;
-    }
-    else {
-        usage(argv[0]);
-    }     
+    args.cond.inits = temp;
+
+    // Get moderators.
+    if (argc == 6) {
+        char *p = strstr(argv[5], "s=");
+        if (p) {
+            s = strtod(&p[2], NULL);
+        }
+        else {
+            fprintf(stderr, "\nModerator s not found.\n\n");
+            exit(EXIT_FAILURE);
+        }
+    }    
     
     return args;
 } 
@@ -127,11 +141,11 @@ myArgs getArgs(int argc, char const *argv[]) {
 /**
  * @brief Prints a message to stderr explaining how to run the program.
  * 
- * @param prog_name the name of the executable file
+ * @param prog_name the name of the executable file.
  */
 void usage(const char *prog_name) {
-    fprintf(stderr, "\nUsage: %s [Method]\n", prog_name);
-    fprintf(stderr, "\tMethods: Eulers, RungeKutta\n\n");
+    fprintf(stderr, "\nUsage: %s [x0] [xEnd] [step] [transient] [Opt: Moderators]\n", prog_name);
+    fprintf(stderr, "\tModerators: s=\n\n");
     exit(EXIT_FAILURE);
 }
 
@@ -145,22 +159,11 @@ double getTime(){
 }
 
 /**
- * @brief releases the heap memory allocated to a solution struture.
- * 
- * @param sol the solution struture to be freed.
- */
-void freeEqSolution(EqSolution *sol) {
-    for (int i = 0; i < sol->funcCount; ++i) {
-        free(sol->approx[i]);
-    }
-    free(sol->x);
-}
-
-/**
  * @brief ODE containing an exponential.
  * 
  * @param inputs an array of inputs used to evaluate the ODEs.
  * @param curX the current x coordinate.
+ * 
  * @return float* a static array of results from evaluating the ODEs.
  */
 float *getExp(float inputs[], float curX) {
@@ -176,6 +179,7 @@ float *getExp(float inputs[], float curX) {
  * 
  * @param inputs an array of inputs used to evaluate the ODEs.
  * @param curX the current x coordinate.
+ * 
  * @return float* a static array of results from evaluating the ODEs.
  */
 float *getHR(float inputs[], float curX) {
