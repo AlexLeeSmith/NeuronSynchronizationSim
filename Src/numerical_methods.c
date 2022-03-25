@@ -62,40 +62,45 @@ void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSol
     // Begin Runge-Kutta method.
     float k[4][sol->funcCount], *slopes;
     for (int curStep = 0; curStep < sol->stepCount; ++curStep) {
-        // Calculate k1 for each function
-        slopes = getODEs(inputs, sol->x[curStep]);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[0][curFunc] = cond->step * slopes[curFunc];
+        // Calculate k1-4 for each function.
+        for (int curK = 0; curK < 4; ++curK) {
+            // Calculate inputs.
+            for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+                switch (curK) {
+                    case 1:
+                        inputs[curFunc] = sol->approx[curFunc][curStep] + 0.5 * k[0][curFunc];
+                        break;
+                    case 2:
+                        inputs[curFunc] = sol->approx[curFunc][curStep] + 0.5 * k[1][curFunc];
+                        break;
+                    case 3:
+                        inputs[curFunc] = sol->approx[curFunc][curStep] + k[2][curFunc];
+                        break;
+                }
+            }
+            
+            // Calculate curX.
+            float curX = sol->x[curStep];
+            switch (curK) {
+                case 1:
+                case 2:
+                    curX += 0.5 * cond->step;
+                    break;
+                case 3:
+                    curX += cond->step;
+                    break;
+            }
+
+            // Calculate slopes.
+            slopes = getODEs(inputs, curX);
+
+            // Calculate curK.
+            for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+                k[curK][curFunc] = cond->step * slopes[curFunc];
+            }
         }
 
-        // Calculate k2 for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            inputs[curFunc] = sol->approx[curFunc][curStep] + 0.5 * k[0][curFunc];
-        }
-        slopes = getODEs(inputs, sol->x[curStep] + 0.5 * cond->step);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[1][curFunc] = cond->step * slopes[curFunc];
-        }
-
-        // Calculate k3 for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            inputs[curFunc] = sol->approx[curFunc][curStep] + 0.5 * k[1][curFunc];
-        }
-        slopes = getODEs(inputs, sol->x[curStep] + 0.5 * cond->step);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[2][curFunc] = cond->step * slopes[curFunc];
-        }
-
-        // Calculate k4 for each function
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            inputs[curFunc] = sol->approx[curFunc][curStep] + k[2][curFunc];
-        }
-        slopes = getODEs(inputs, sol->x[curStep] + cond->step);
-        for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-            k[3][curFunc] = cond->step * slopes[curFunc];
-        }
-
-        // Calculate approximation for each function
+        // Calculate approximation for each function.
         for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
             sol->approx[curFunc][curStep + 1] = sol->approx[curFunc][curStep] + (k[0][curFunc] + k[1][curFunc] + k[1][curFunc] + k[2][curFunc] + k[2][curFunc] + k[3][curFunc]) / 6.0;
             
