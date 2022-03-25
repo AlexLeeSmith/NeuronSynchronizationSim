@@ -23,13 +23,10 @@ spike:$(SRC)spike_calculations.c
 main:$(SRC)main.c
 	$(CC) -c $(SRC)main.c
 
-clean:cleanObject cleanMain cleanRunApproximation
+clean:cleanObject cleanMain
 
 cleanObject:
 	$(RM) numerical_methods.o spike_calculations.o main.o
 
 cleanMain:
-	$(RM) $(BIN)main
-
-cleanRunApproximation:
-	$(RM) $(OUT)runApproximation
+	$(RM) $(BIN)main $(OUT)approx* $(OUT)spikes* $(OUT)ISIs*
