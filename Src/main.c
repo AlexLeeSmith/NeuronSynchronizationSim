@@ -24,7 +24,7 @@
 #define xR -1.56F
 #define r 0.006F
 #define I 3.1F
-#define gc 0.0F
+#define gc 0.1F
 
 /** Global Variables **/
 float s = 3.6;          // Default value.
@@ -202,7 +202,7 @@ float *getHR(float inputs[], float curX) {
     float s1 = inputs[3];
     float x2 = inputs[4];
 
-    slopes[0] = y - (x*x*x) + (3*x*x) - z + I + gc * (x - x2);
+    slopes[0] = y - (x*x*x) + (3*x*x) - z + I - gc * (x - x2);
     slopes[1] = 1 - (5*x*x) - y;
     slopes[2] = r * (s1 * (x - xR) - z);
 

@@ -59,7 +59,7 @@ void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSol
         inputs[0][i] = cond->inits[i];
         inputs[1][i] = cond->inits[i];
     }
-    inputs[0][sol->funcCount] = 3.6;
+    inputs[0][sol->funcCount] = 3.6; // these are the temporary s values
     inputs[1][sol->funcCount] = 4.2;
     inputs[0][sol->funcCount + 1] = 0.0;
     inputs[1][sol->funcCount + 1] = 0.0;
