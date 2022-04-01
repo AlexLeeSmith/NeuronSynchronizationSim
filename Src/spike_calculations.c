@@ -12,15 +12,27 @@
 #include <stdlib.h>     // EXIT_FAILURE
 
 /** Functions **/
+Points initPoints(int size) {
+    int numBytes = size * sizeof(float);
+
+    Points points = { 
+        .x = (float *) malloc(numBytes),
+        .y = (float *) malloc(numBytes),
+        .size = size
+    };
+
+    return points;
+}
+
 /**
  * @brief Finds the spikes within the given set of points.
  * 
- * @param spikes the Points struture to store the found spikes in.
  * @param x an array of x coordinates.
  * @param y an array of y coordinates.
  * @param size the size of the x and y arrays (must be at least 3).
  */
-void findSpikes(Points *spikes, float x[], float y[], int size, float transient) {
+Points findSpikes(float x[], float y[], int size, float transient) {
+    Points spikes = initPoints(size);
     int spikeCount = 0;
 
     // Find the point to start searching from.
@@ -34,8 +46,8 @@ void findSpikes(Points *spikes, float x[], float y[], int size, float transient)
     // Look for the spike tips (the first point cannot be a spike).
     for (int i = 0, j = start; j < size - 2; ++i, ++j) {   
         if (y[j] < y[j+1] && y[j+1] > y[j+2]) {
-            spikes->x[spikeCount] = x[i+1];
-            spikes->y[spikeCount] = y[j+1];
+            spikes.x[spikeCount] = x[i+1];
+            spikes.y[spikeCount] = y[j+1];
             ++spikeCount;
         }
     }
@@ -57,7 +69,9 @@ void findSpikes(Points *spikes, float x[], float y[], int size, float transient)
     // }
 
     // Update the spike count.
-    spikes->size = spikeCount;
+    spikes.size = spikeCount;
+
+    return spikes;
 }
 
 /**
@@ -101,7 +115,7 @@ void writePoints(char filename[], Points *points) {
         perror("Write Points");
         exit(EXIT_FAILURE);
     }
-
+    
     // Begin writing.
     for (int i = 0; i < points->size; i++) {
         fprintf(outfile, "%f\t%f\n", points->x[i], points->y[i]);
@@ -118,7 +132,7 @@ void writePoints(char filename[], Points *points) {
  * @param intervals the array of intervals to be written.
  * @param size the size of the intervals array.
  */
-void writeInterSpikeIntervals(char filename[], float *intervals, int size) {
+void writeInterSpikeIntervals(char filename[], float intervals[], int size) {
     // Open output file for writing.
     FILE *outfile;
     if ((outfile = fopen(filename, "w")) == NULL) {

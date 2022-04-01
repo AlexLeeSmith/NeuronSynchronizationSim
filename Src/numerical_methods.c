@@ -10,8 +10,48 @@
 
 #include <stdio.h>      // fprintf(), FILE, fopen(), fclose(), perror()
 #include <stdlib.h>     // EXIT_FAILURE
+#include <math.h>       // ceil()
 
 /** Functions **/
+EqConditions initEqConditions(float x0, float xEnd, float step, float transient, int funcCount) {
+    EqConditions cond = {
+        .x0 = x0,
+        .xEnd = xEnd,
+        .step = step,
+        .transient = transient
+    };
+
+    cond.inits = (float *) malloc(funcCount * sizeof(float));
+    for (int i = 0; i < funcCount; ++i) {
+        cond.inits[i] = 0.0;
+    }
+
+    return cond;
+}
+
+EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int funcCount) {
+    int stepCount = ceil((xEnd - x0) / step);
+    int size = stepCount + 1;
+    int numBytes = size * sizeof(float);
+
+    EqSolution sol = {
+        .x = (float *) malloc(numBytes),
+        .neuronCount = neuronCount,
+        .funcCount = funcCount,
+        .stepCount = stepCount
+    };
+
+    sol.approx = (float ***) malloc(neuronCount * sizeof(float **));
+    for (int neuron = 0; neuron < neuronCount; ++neuron) {
+        sol.approx[neuron] = (float **) malloc(funcCount * sizeof(float *));
+        for (int func = 0; func < funcCount; ++func) {
+            sol.approx[neuron][func] = (float *) malloc(stepCount * sizeof(float));
+        }        
+    }    
+
+    return sol;
+}
+
 /**
  * @brief Runs Euler's first-order numerical method for approximating ODEs.
  * 
@@ -157,15 +197,22 @@ void writeSolution(char filename[], float x[], float approx[], int size, float t
     fclose(outfile);
 }
 
+void freeEqConditions(EqConditions *cond) {
+    free(cond->inits);
+}
+
 /**
  * @brief Frees the heap memory allocated to a EqSolution struture.
  * 
  * @param sol the EqSolution struture to be freed.
  */
 void freeEqSolution(EqSolution *sol) {
-    for (int i = 0; i < sol->funcCount; ++i) {
-        free(sol->approx[0][i]);
-        free(sol->approx[1][i]);
-    }
+    for (int neuron = 0; neuron < sol->neuronCount; ++neuron) {
+        for (int func = 0; func < sol->funcCount; ++func) {
+            free(sol->approx[neuron][func]);
+        }
+        free(sol->approx[neuron]);
+    }  
+    free(sol->approx);
     free(sol->x);
 }
