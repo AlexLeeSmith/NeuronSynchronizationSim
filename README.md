@@ -1,6 +1,10 @@
 # IT287
 The goal of this project is to simulate a graph of coupled neurons.
 
+## Contents
+1. [Project Directories](https://github.com/LittleB30/IT287/tree/Dev#project-directories)
+2. [Todo](https://github.com/LittleB30/IT287/tree/Dev#todo)
+
 ## Project Directories
 - Bin: Contains all executable files.
 - Graph: Contains all availible input graphs.
