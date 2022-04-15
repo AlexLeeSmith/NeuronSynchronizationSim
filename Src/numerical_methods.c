@@ -1,6 +1,5 @@
 /**
  * This file implements the numerical methods header file.
- * 
  * @author Alex Smith (alsmi14@ilstu.edu)
  * @date 1/30/22
  */
@@ -21,7 +20,10 @@ EqConditions initEqConditions(float x0, float xEnd, float step, float transient,
         .transient = transient
     };
 
-    cond.inits = (float *) malloc(funcCount * sizeof(float));
+    if ((cond.inits = (float *) malloc(funcCount * sizeof(float))) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < funcCount; ++i) {
         cond.inits[i] = 0.0;
     }
@@ -35,30 +37,42 @@ EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int
     int numBytes = size * sizeof(float);
 
     EqSolution sol = {
-        .x = (float *) malloc(numBytes),
         .neuronCount = neuronCount,
         .funcCount = funcCount,
         .stepCount = stepCount
     };
+    if ((sol.x = (float *) malloc(numBytes)) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
 
-    sol.approx = (float ***) malloc(neuronCount * sizeof(float **));
+    if ((sol.approx = (float ***) malloc(neuronCount * sizeof(float **))) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
     for (int neuron = 0; neuron < neuronCount; ++neuron) {
-        sol.approx[neuron] = (float **) malloc(funcCount * sizeof(float *));
-        for (int func = 0; func < funcCount; ++func) {
-            sol.approx[neuron][func] = (float *) malloc(stepCount * sizeof(float));
+        if ((sol.approx[neuron] = (float **) malloc(funcCount * sizeof(float *))) == NULL) {
+            perror("malloc() failure");
+            exit(EXIT_FAILURE);
         }        
+        for (int func = 0; func < funcCount; ++func) {
+            if ((sol.approx[neuron][func] = (float *) malloc(numBytes)) == NULL) {
+                perror("malloc() failure");
+                exit(EXIT_FAILURE);
+            }            
+        }
     }    
 
     return sol;
 }
 
-/**
- * @brief Runs Euler's first-order numerical method for approximating ODEs.
- * 
- * @param getODEs a pointer to function that returns the result(s) of ODEs with given inputs.
- * @param cond a structure containing the input conditions.
- * @param sol a struture where the solution will be stored.
- */
+// /**
+//  * @brief Runs Euler's first-order numerical method for approximating ODEs.
+//  * 
+//  * @param getODEs a pointer to function that returns the result(s) of ODEs with given inputs.
+//  * @param cond a structure containing the input conditions.
+//  * @param sol a struture where the solution will be stored.
+//  */
 // void runEulers(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol) {
 //     // Assign initial values for each function and x.
 //     float inputs[sol->funcCount];
@@ -90,77 +104,82 @@ EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int
  * @param cond a structure containing the input conditions.
  * @param sol a struture where the solution will be stored.
  */
-void runRungeKutta(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol) {
-    // Assign initial values for each function and x.
-    float inputs[2][sol->funcCount + 2]; // plus 2 to add coupling and different s
-    for (int i = 0; i < sol->funcCount; ++i) {
-        sol->approx[0][i][0] = cond->inits[i];
-        sol->approx[1][i][0] = cond->inits[i];
-        inputs[0][i] = cond->inits[i];
-        inputs[1][i] = cond->inits[i];
+EqSolution runRungeKutta(void (*getODEs)(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]), EqConditions *cond, Graph *graph, int funcCount) {
+    EqSolution sol = initEqSolution(cond->x0, cond->xEnd, cond->step, graph->vertexCount, funcCount);
+
+    // Assign initial values for each function of each neuron and x.
+    float inputs[funcCount][sol.neuronCount]; 
+    for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+        for (int curFunc = 0; curFunc < funcCount; ++curFunc) {
+            sol.approx[neuron][curFunc][0] = cond->inits[curFunc];
+        }
     }
-    inputs[0][sol->funcCount] = 3.6; // these are the temporary s values
-    inputs[1][sol->funcCount] = 4.2;
-    inputs[0][sol->funcCount + 1] = 0.0;
-    inputs[1][sol->funcCount + 1] = 0.0;
-    sol->x[0] = cond->x0;
-    
+    sol.x[0] = cond->x0;
+
     // Begin Runge-Kutta method.
-    float k[4][2][sol->funcCount], *slopes[2];
-    for (int curStep = 0; curStep < sol->stepCount; ++curStep) {
-        for (int neuron = 0; neuron < 2; ++neuron) {
-            // Calculate k1-4 for each function.
-            for (int curK = 0; curK < 4; ++curK) {
-                // Calculate inputs.
-                for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
+    float k[4][sol.neuronCount][funcCount], slopes[funcCount];
+    for (int curStep = 0; curStep < sol.stepCount; ++curStep) {
+        // Calculate k1-4 for each function.
+        for (int curK = 0; curK < 4; ++curK) {
+            // Calculate inputs of each neuron for the current k.
+            for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+                for (int curFunc = 0; curFunc < funcCount; ++curFunc) {
                     switch (curK) {
+                        case 0:
+                            inputs[curFunc][neuron] = sol.approx[neuron][curFunc][curStep];
+                            break;
                         case 1:
-                            inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep] + 0.5 * k[0][neuron][curFunc];
+                            inputs[curFunc][neuron] = sol.approx[neuron][curFunc][curStep] + 0.5 * k[0][neuron][curFunc];
                             break;
                         case 2:
-                            inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep] + 0.5 * k[1][neuron][curFunc];
+                            inputs[curFunc][neuron] = sol.approx[neuron][curFunc][curStep] + 0.5 * k[1][neuron][curFunc];
                             break;
                         case 3:
-                            inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep] + k[2][neuron][curFunc];
+                            inputs[curFunc][neuron] = sol.approx[neuron][curFunc][curStep] + k[2][neuron][curFunc];
                             break;
                     }
-                }                      
-                
-                // Calculate curX.
-                float curX = sol->x[curStep];
-                switch (curK) {
-                    case 1:
-                    case 2:
-                        curX += 0.5 * cond->step;
-                        break;
-                    case 3:
-                        curX += cond->step;
-                        break;
                 }
+            }                                
+            
+            // Calculate curX.
+            float curX = sol.x[curStep];
+            switch (curK) {
+                case 1:
+                case 2:
+                    curX += 0.5 * cond->step;
+                    break;
+                case 3:
+                    curX += cond->step;
+                    break;
+            }
 
+            for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
                 // Calculate slopes.
-                slopes[neuron] = getODEs(inputs[neuron], curX);
+                getODEs(sol.neuronCount, inputs, curX, graph->adjMatrix[neuron], neuron, slopes);
 
                 // Calculate curK.
-                for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-                    k[curK][neuron][curFunc] = cond->step * slopes[neuron][curFunc];
+                for (int curFunc = 0; curFunc < funcCount; ++curFunc) {
+                    k[curK][neuron][curFunc] = cond->step * slopes[curFunc];
                 }
-            }
+            }            
+        }
 
-            // Calculate approximation for each function.
-            for (int curFunc = 0; curFunc < sol->funcCount; ++curFunc) {
-                sol->approx[neuron][curFunc][curStep + 1] = sol->approx[neuron][curFunc][curStep] + (k[0][neuron][curFunc] + k[1][neuron][curFunc] + k[1][neuron][curFunc] + k[2][neuron][curFunc] + k[2][neuron][curFunc] + k[3][neuron][curFunc]) / 6.0;
-
-                // Update the input for the next step.
-                inputs[neuron][curFunc] = sol->approx[neuron][curFunc][curStep + 1];
+        // Calculate approximation for each function of each neuron.
+        for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+            for (int curFunc = 0; curFunc < funcCount; ++curFunc) {
+                sol.approx[neuron][curFunc][curStep + 1] = sol.approx[neuron][curFunc][curStep] + (k[0][neuron][curFunc] + k[1][neuron][curFunc] + k[1][neuron][curFunc] + k[2][neuron][curFunc] + k[2][neuron][curFunc] + k[3][neuron][curFunc]) / 6.0;
             }
-        }        
-        inputs[0][sol->funcCount + 1] = sol->approx[1][0][curStep];
-        inputs[1][sol->funcCount + 1] = sol->approx[0][0][curStep];
+        }
         
         // Calculate next step in the x direction.
-        sol->x[curStep + 1] = sol->x[curStep] + cond->step;        
+        sol.x[curStep + 1] = sol.x[curStep] + cond->step;        
     }
+
+    // for (int i = 0; i < sol.stepCount + 1; i++) {
+    //     printf("%f\n", sol.approx[0][0][i]);
+    // }
+
+    return sol;
 }
 
 /**
@@ -180,19 +199,19 @@ void writeSolution(char filename[], float x[], float approx[], int size, float t
             start = i;
         }        
     }
-
+    
     // Open output file for writing.
     FILE *outfile;
     if ((outfile = fopen(filename, "w")) == NULL) {
         perror("Write Solution");
         exit(EXIT_FAILURE);
     }
-
+    
     // Begin writing.
     for (int i = 0, j = start; j < size; ++i, ++j) {
         fprintf(outfile, "%f\t%f\n", x[i], approx[j]);   
     }
-
+    
     // Close ouput file.
     fclose(outfile);
 }

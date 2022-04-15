@@ -13,6 +13,7 @@
 /** Preprocessor Directives **/
 #include "numerical_methods.h"
 #include "spike_calculations.h"
+#include "graph_manipulations.h"
 
 #include <stdio.h>      // printf(), fprintf()
 #include <math.h>       // ceil(), exp()
@@ -21,89 +22,86 @@
 #include <string.h>     // strstr()
 
 #define FUNC_COUNT 3    // MAKE SURE TO CHANGE THIS BEFORE SWAPPING THE getODEs() FUNCTION.
+#define SPIKE_THRESHOLD 0.0
 #define xR -1.56F
 #define r 0.006F
 #define I 3.1F
-#define gc 0.1F
-
-/** Global Variables **/
-float s = 3.6;          // Default value.
 
 /** Structures **/
 typedef struct {
-    EqConditions cond;
+    float x0;
+    float xEnd;
+    float step;
+    float transient;
+    char *graphFile;
 } myArgs;
 
 /** Forward Declarations **/
-myArgs getArgs(int, char const *[]);
+myArgs getArgs(int, char *[]);
 void usage(const char *);
 double getTime();
 float *getExp(float [], float);
-float *getHR(float [], float);
+void getHR(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]);
 
 /** Functions **/
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[]) {
     double start, elapsed;
     myArgs args;
+    EqConditions cond;
+    EqSolution sol;
+    Graph graph;
+    Points *spikes;
 
     // Read command line parameters.
     args = getArgs(argc, argv);
 
-    // Initialize EqSolution structure.
-    int stepCount = ceil((args.cond.xEnd - args.cond.x0) / args.cond.step);
-    int size = stepCount + 1;
-    int numBytes = size * sizeof(float);
-    EqSolution sol = {
-        .x = (float *) malloc(numBytes),
-        .funcCount = FUNC_COUNT,
-        .stepCount = stepCount
-    };
-    float *temp1[FUNC_COUNT];
-    float *temp2[FUNC_COUNT];
-    for (int i = 0; i < FUNC_COUNT; i++) {
-        temp1[i] = (float *) malloc(numBytes);
-        temp2[i] = (float *) malloc(numBytes);
+    // Initialize Conditions and Solution structures.
+    cond = initEqConditions(args.x0, args.xEnd, args.step, args.transient, FUNC_COUNT);
+    graph = readGraph(args.graphFile);
+    if ((spikes = (Points *) malloc(graph.vertexCount * sizeof(Points))) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
     }
-    sol.approx[0] = temp1;
-    sol.approx[1] = temp2;
-    
-    // Initialize Points structure.
-    Points spikes1 = { 
-        .x = (float *) malloc(numBytes),
-        .y = (float *) malloc(numBytes)
-    };
-    Points spikes2 = { 
-        .x = (float *) malloc(numBytes),
-        .y = (float *) malloc(numBytes)
-    };
 
     // Allocate intervals array.
     //float *intervals = (float *) malloc(numBytes);
-    
+
     // Run calculations.
     start = getTime();
-    runRungeKutta(&getHR, &args.cond, &sol);
-    findSpikes(&spikes1, sol.x, sol.approx[0][0], size, args.cond.transient);
-    findSpikes(&spikes2, sol.x, sol.approx[1][0], size, args.cond.transient);
+    sol = runRungeKutta(&getHR, &cond, &graph, FUNC_COUNT);
+    for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+        spikes[neuron] = findSpikes(sol.x, sol.approx[neuron][0], sol.stepCount + 1, cond.transient, SPIKE_THRESHOLD);
+    }
     //int isiCount = getInterSpikeIntervals(&spikes, intervals);
     elapsed = getTime() - start;
 
     // Print results.
-    printf("Hindmarsh-Rose (HR) neuronal model (s=%g):\n", s);
+    printf("Hindmarsh-Rose (HR) neuronal model:\n");
     printf("\tElapsed: %f seconds\n", elapsed);
     //printf("\tAvg Frequency: %f spikes/sec\n\n", getAveFrequency(spikes.size, args.cond.transient, args.cond.xEnd, 1000.0));
 
-    // Write calculations.
-    writeSolution("Out/approx1", sol.x, sol.approx[0][0], size, args.cond.transient);
-    writeSolution("Out/approx2", sol.x, sol.approx[1][0], size, args.cond.transient);
-    writePoints("Out/spikes1", &spikes1);
-    writePoints("Out/spikes2", &spikes2);
-    //writeInterSpikeIntervals("Out/ISIs", intervals, isiCount);
+    // for (int i = 0; i < sol.stepCount + 1; i++) {
+    //     printf("%f\n", sol.approx[0][0][i]);
+    // }
 
+    // Write calculations.
+    char filename[20];
+    for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+        sprintf(filename, "Out/approx%d", neuron);
+        writeSolution(filename, sol.x, sol.approx[neuron][0], sol.stepCount + 1, cond.transient);
+        sprintf(filename, "Out/spikes%d", neuron);
+        writePoints(filename, &spikes[neuron]);
+        //writeInterSpikeIntervals("Out/ISIs", intervals, isiCount);
+    }
+    
     // Free heap memory and exit.
+    freeEqConditions(&cond);
     freeEqSolution(&sol);
-    freePoints(&spikes1);
-    freePoints(&spikes2);
+    for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+        freePoints(&spikes[neuron]);
+    }
+    free(spikes);
+    freeGraph(&graph);
     //free(intervals);
     exit(EXIT_SUCCESS);
 }
@@ -116,36 +114,19 @@ int main(int argc, char const *argv[]) {
  * 
  * @return the command line arguments in their correct data types.
  */
-myArgs getArgs(int argc, char const *argv[]) {
+myArgs getArgs(int argc, char *argv[]) {
     myArgs args;
 
     // Verify the number of arguments.
-    if (argc != 5 && argc != 6) 
+    if (argc != 6) 
         usage(argv[0]);
 
     // Get conditions.
-    args.cond.x0 = strtod(argv[1], NULL);
-    args.cond.xEnd = strtod(argv[2], NULL);
-    args.cond.step = strtod(argv[3], NULL);
-    args.cond.transient = strtod(argv[4], NULL);
-
-    float temp[FUNC_COUNT];
-    for (int i = 0; i < FUNC_COUNT; i++) {
-        temp[i] = 0.0;
-    }
-    args.cond.inits = temp;
-
-    // Get moderators.
-    if (argc == 6) {
-        char *p = strstr(argv[5], "s=");
-        if (p) {
-            s = strtod(&p[2], NULL);
-        }
-        else {
-            fprintf(stderr, "\nModerator s not found.\n\n");
-            exit(EXIT_FAILURE);
-        }
-    }    
+    args.x0 = strtod(argv[1], NULL);
+    args.xEnd = strtod(argv[2], NULL);
+    args.step = strtod(argv[3], NULL);
+    args.transient = strtod(argv[4], NULL);
+    args.graphFile = argv[5];
     
     return args;
 } 
@@ -156,8 +137,7 @@ myArgs getArgs(int argc, char const *argv[]) {
  * @param prog_name the name of the executable file.
  */
 void usage(const char *prog_name) {
-    fprintf(stderr, "\nUsage: %s [x0] [xEnd] [step] [transient] [Opt: Moderators]\n", prog_name);
-    fprintf(stderr, "\tModerators: s=\n\n");
+    fprintf(stderr, "\nUsage: %s [x0] [xEnd] [step] [transient] [graph file]\n\n", prog_name);
     exit(EXIT_FAILURE);
 }
 
@@ -186,6 +166,19 @@ float *getExp(float inputs[], float curX) {
     return slopes;
 }
 
+float calcSyncFactor(float inputs[], float weights[], int neuronCount, int myNeuron) {
+    float factor = 0.0;
+
+    // Caclulate the synchronization factor of each neuron.
+    for (int neuron = 0; neuron < neuronCount; ++neuron) {
+        if (neuron != myNeuron) {
+            factor += weights[neuron] * (inputs[myNeuron] - inputs[neuron]);
+        }
+    }
+    
+    return factor;
+}
+
 /**
  * @brief Hindmarsh-Rose (HR) neuronal model.
  * 
@@ -194,17 +187,14 @@ float *getExp(float inputs[], float curX) {
  * 
  * @return a static array of results from evaluating the ODEs.
  */
-float *getHR(float inputs[], float curX) {
-    static float slopes[3];
-    float x = inputs[0];    // Voltage
-    float y = inputs[1];    // Spiking
-    float z = inputs[2];    // Bursting
-    float s1 = inputs[3];
-    float x2 = inputs[4];
+void getHR(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]) {
+    float x = inputs[0][myNeuron];    // Voltage
+    float y = inputs[1][myNeuron];    // Spiking
+    float z = inputs[2][myNeuron];    // Bursting
+    float s = weights[myNeuron];
 
-    slopes[0] = y - (x*x*x) + (3*x*x) - z + I - gc * (x - x2);
-    slopes[1] = 1 - (5*x*x) - y;
-    slopes[2] = r * (s1 * (x - xR) - z);
-
-    return slopes;
+    // result[0] = y - (x*x*x) + (3*x*x) - z + I - gc * (x - x2);
+    result[0] = y - (x*x*x) + (3*x*x) - z + I - calcSyncFactor(inputs[0], weights, neuronCount, myNeuron);
+    result[1] = 1 - (5*x*x) - y;
+    result[2] = r * (s * (x - xR) - z);
 }

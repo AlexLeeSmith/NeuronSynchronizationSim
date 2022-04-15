@@ -11,8 +11,11 @@ FLAGS=-g -Wall
 
 allclean:all cleanObject
 
-all:numerical spike main
-	$(CC) $(FLAGS) numerical_methods.o spike_calculations.o main.o -o $(BIN)main $(LIBS)
+all:graph numerical spike main
+	$(CC) $(FLAGS) graph_manipulations.o numerical_methods.o spike_calculations.o main.o -o $(BIN)main $(LIBS)
+
+graph:$(SRC)graph_manipulations.c
+	$(CC) -c $(SRC)graph_manipulations.c 
 
 numerical:$(SRC)numerical_methods.c
 	$(CC) -c $(SRC)numerical_methods.c 
@@ -26,7 +29,7 @@ main:$(SRC)main.c
 clean:cleanObject cleanMain
 
 cleanObject:
-	$(RM) numerical_methods.o spike_calculations.o main.o
+	$(RM) graph_manipulations.o numerical_methods.o spike_calculations.o main.o
 
 cleanMain:
 	$(RM) $(BIN)main $(OUT)approx* $(OUT)spikes* $(OUT)ISIs*
