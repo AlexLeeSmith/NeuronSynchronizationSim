@@ -1,6 +1,5 @@
 /**
  * This file implements the spike calculations header file.
- * 
  * @author Alex Smith (alsmi14@ilstu.edu)
  * @date 2/24/22
  */
@@ -13,13 +12,18 @@
 
 /** Functions **/
 Points initPoints(int size) {
+    Points points;
     int numBytes = size * sizeof(float);
-
-    Points points = { 
-        .x = (float *) malloc(numBytes),
-        .y = (float *) malloc(numBytes),
-        .size = size
-    };
+    
+    if ((points.x = (float *) malloc(numBytes)) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
+    if ((points.y = (float *) malloc(numBytes)) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
+    points.size = size;
 
     return points;
 }
@@ -31,7 +35,7 @@ Points initPoints(int size) {
  * @param y an array of y coordinates.
  * @param size the size of the x and y arrays (must be at least 3).
  */
-Points findSpikes(float x[], float y[], int size, float transient) {
+Points findSpikes(float x[], float y[], int size, float transient, float threshold) {
     Points spikes = initPoints(size);
     int spikeCount = 0;
 
@@ -43,30 +47,30 @@ Points findSpikes(float x[], float y[], int size, float transient) {
         }        
     }
 
-    // Look for the spike tips (the first point cannot be a spike).
-    for (int i = 0, j = start; j < size - 2; ++i, ++j) {   
-        if (y[j] < y[j+1] && y[j+1] > y[j+2]) {
-            spikes.x[spikeCount] = x[i+1];
-            spikes.y[spikeCount] = y[j+1];
-            ++spikeCount;
-        }
-    }
-
-    // Look for the first point above a specifed threshold.
-    // int found = 0;
-    // for (int i = 0; i < size ; ++i) {
-    //     if (y[i] >= threshold) {
-    //         if (!found) {
-    //             spikes->x[spikeCount] = x[i];
-    //             spikes->y[spikeCount] = y[i];
-    //             ++spikeCount;
-    //             found = 1;
-    //         }
-    //     }
-    //     else {
-    //         found = 0;
+    // // Look for the spike tips (the first point cannot be a spike).
+    // for (int i = 0, j = start; j < size - 2; ++i, ++j) {   
+    //     if (y[j] < y[j+1] && y[j+1] > y[j+2]) {
+    //         spikes.x[spikeCount] = x[i+1];
+    //         spikes.y[spikeCount] = y[j+1];
+    //         ++spikeCount;
     //     }
     // }
+
+    // Look for the first point above a specifed threshold.
+    int found = 0;
+    for (int i = 0, j = start; j < size; ++i, ++j) {
+        if (y[j] >= threshold) {
+            if (!found) {
+                spikes.x[spikeCount] = x[i];
+                spikes.y[spikeCount] = y[j];
+                ++spikeCount;
+                found = 1;
+            }
+        }
+        else {
+            found = 0;
+        }
+    }
 
     // Update the spike count.
     spikes.size = spikeCount;
