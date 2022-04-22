@@ -50,20 +50,38 @@ Points findSpikes(float x[], float y[], int size, float transient, float thresho
 
     // // Look for the spike tips (the first point cannot be a spike).
     // for (int i = 0, j = start; j < size - 2; ++i, ++j) {   
-    //     if (y[j] < y[j+1] && y[j+1] > y[j+2]) {
+    //     if (y[j] <= y[j+1] && y[j+1] >= y[j+2]) {
     //         spikes.x[spikeCount] = x[i+1];
     //         spikes.y[spikeCount] = y[j+1];
     //         ++spikeCount;
     //     }
     // }
 
-    // Look for the first point above a specifed threshold.
+    // // Look for the first point above a specifed threshold.
+    // int found = 0;
+    // for (int i = 0, j = start; j < size; ++i, ++j) {
+    //     if (y[j] >= threshold) {
+    //         if (!found) {
+    //             spikes.x[spikeCount] = x[i];
+    //             spikes.y[spikeCount] = y[j];
+    //             ++spikeCount;
+    //             found = 1;
+    //         }
+    //     }
+    //     else {
+    //         found = 0;
+    //     }
+    // }
+
+    // Look for peaks that appear above the specifed threshold
     int found = 0;
-    for (int i = 0, j = start; j < size; ++i, ++j) {
-        if (y[j] >= threshold) {
-            if (!found) {
-                spikes.x[spikeCount] = x[i];
-                spikes.y[spikeCount] = y[j];
+    for (int i = 0, j = start; j < size - 2; ++i, ++j) {
+        // Check if the middle point is above the threshold.
+        if (y[j+1] >= threshold) {
+            // Check if this point is a peak.
+            if (!found && y[j] <= y[j+1] && y[j+1] >= y[j+2]) {
+                spikes.x[spikeCount] = x[i+1];
+                spikes.y[spikeCount] = y[j+1];
                 ++spikeCount;
                 found = 1;
             }
