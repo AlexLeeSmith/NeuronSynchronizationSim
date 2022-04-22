@@ -14,16 +14,15 @@ The goal of this project is to simulate a graph of coupled neurons.
 - Src: Contains all source code files including headers, implementations, and drivers.
 
 ## Todo
-- [x] Add ISI calculations for all neurons.
 - [ ] Add diffEQ command-line parameter.
-- [ ] Add average frequency calculations for all neurons.
+- [ ] Add check on calcISI that spike count >= 2.
+- [ ] Add check on findSpikes that approx.size >= 3.
+- [ ] Make getS more efficient.
+- [ ] Add average frequency calculations for all neurons to file (neuronNum aveFreq).
+- [ ] Print s values to a file (neuronNum s)
 - [ ] Breakup complex methods like runRungeKutta.
 - [ ] Fix the weird method declaration of getODEs.
-- [x] Make the control variable s be calculated using myNeuron (remove s from the graph diagonal).
-- [x] Make findSpikes only look for peaks above a certain threshold.
-- [x] Update all method comments.
-- [x] Rename and split main.c into separate header files.
-- [x] Add a larger test graph.
+- [ ] Create more scripts for generating gnuplot images (x approx) (neuronNum spikeX).
+- [ ] Create a python script using NetworkX to generate adjacency matrices.
+- [ ] Add logic somewhere to scale the adjacency matrix weights.
 - [ ] Parallelize runRungeKutta where possible.
-- [ ] Create more scripts for generating gnuplot images.
-- [ ] Create a python script using NetworkX to generate inputtable graphs.
