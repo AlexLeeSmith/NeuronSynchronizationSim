@@ -15,6 +15,7 @@ The goal of this project is to simulate a graph of coupled neurons.
 
 ## Todo
 - [x] Add ISI calculations for all neurons.
+- [ ] Add diffEQ command-line parameter.
 - [ ] Add average frequency calculations for all neurons.
 - [ ] Breakup complex methods like runRungeKutta.
 - [ ] Fix the weird method declaration of getODEs.
