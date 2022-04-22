@@ -1,17 +1,19 @@
 /**
- * This file implements the numerical methods header file.
+ * @file numerical_methods.c
  * @author Alex Smith (alsmi14@ilstu.edu)
- * @date 1/30/22
+ * @brief This file implements the numerical methods header file.
+ * @version 0.1
+ * @date 2022-01-30
+ * 
+ * @copyright Copyright (c) 2022
  */
 
-/** Preprocessor Directives **/
 #include "numerical_methods.h"
 
-#include <stdio.h>      // fprintf(), FILE, fopen(), fclose(), perror()
-#include <stdlib.h>     // EXIT_FAILURE
-#include <math.h>       // ceil()
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
-/** Functions **/
 EqConditions initEqConditions(float x0, float xEnd, float step, float transient, int funcCount) {
     EqConditions cond = {
         .x0 = x0,
@@ -20,10 +22,13 @@ EqConditions initEqConditions(float x0, float xEnd, float step, float transient,
         .transient = transient
     };
 
+    // Allocate heap memory for the initial values array.
     if ((cond.inits = (float *) malloc(funcCount * sizeof(float))) == NULL) {
         perror("malloc() failure");
         exit(EXIT_FAILURE);
     }
+
+    // Set the initial values to 0.
     for (int i = 0; i < funcCount; ++i) {
         cond.inits[i] = 0.0;
     }
@@ -32,6 +37,7 @@ EqConditions initEqConditions(float x0, float xEnd, float step, float transient,
 }
 
 EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int funcCount) {
+    // Calculate the step count and the number of bytes required.
     int stepCount = ceil((xEnd - x0) / step);
     int size = stepCount + 1;
     int numBytes = size * sizeof(float);
@@ -41,21 +47,26 @@ EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int
         .funcCount = funcCount,
         .stepCount = stepCount
     };
+
+    // Allocate heap memory for the x array.
     if ((sol.x = (float *) malloc(numBytes)) == NULL) {
         perror("malloc() failure");
         exit(EXIT_FAILURE);
     }
 
+    // Allocate heap memory for the approximation of each neuron.
     if ((sol.approx = (float ***) malloc(neuronCount * sizeof(float **))) == NULL) {
         perror("malloc() failure");
         exit(EXIT_FAILURE);
     }
     for (int neuron = 0; neuron < neuronCount; ++neuron) {
+        // Allocate heap memory for the approximation of each function.
         if ((sol.approx[neuron] = (float **) malloc(funcCount * sizeof(float *))) == NULL) {
             perror("malloc() failure");
             exit(EXIT_FAILURE);
         }        
         for (int func = 0; func < funcCount; ++func) {
+            // Allocate heap memory for the approximation of each step + 1 (for the initial position).
             if ((sol.approx[neuron][func] = (float *) malloc(numBytes)) == NULL) {
                 perror("malloc() failure");
                 exit(EXIT_FAILURE);
@@ -66,13 +77,6 @@ EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int
     return sol;
 }
 
-// /**
-//  * @brief Runs Euler's first-order numerical method for approximating ODEs.
-//  * 
-//  * @param getODEs a pointer to function that returns the result(s) of ODEs with given inputs.
-//  * @param cond a structure containing the input conditions.
-//  * @param sol a struture where the solution will be stored.
-//  */
 // void runEulers(float *(*getODEs)(float [], float), EqConditions *cond, EqSolution *sol) {
 //     // Assign initial values for each function and x.
 //     float inputs[sol->funcCount];
@@ -97,13 +101,6 @@ EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int
 //     }
 // }
 
-/**
- * @brief Runs the fourth-order Runge-Kutta numerical method for approximating ODEs.
- * 
- * @param getODEs a pointer to function that returns the result(s) of ODEs with given inputs.
- * @param cond a structure containing the input conditions.
- * @param sol a struture where the solution will be stored.
- */
 EqSolution runRungeKutta(void (*getODEs)(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]), EqConditions *cond, Graph *graph, int funcCount) {
     EqSolution sol = initEqSolution(cond->x0, cond->xEnd, cond->step, graph->vertexCount, funcCount);
 
@@ -175,23 +172,10 @@ EqSolution runRungeKutta(void (*getODEs)(int neuronCount, float inputs[][neuronC
         sol.x[curStep + 1] = sol.x[curStep] + cond->step;        
     }
 
-    // for (int i = 0; i < sol.stepCount + 1; i++) {
-    //     printf("%f\n", sol.approx[0][0][i]);
-    // }
-
     return sol;
 }
 
-/**
- * @brief writes the ODE approximation for each step to a file. 
- * 
- * @param filename the name of the file to write to.
- * @param x an array of steps.
- * @param approx an array of approximations.
- * @param size the size of the x and approx arrays.
- * @param transient the x value to begin printing from.
- */
-void writeSolution(char filename[], float x[], float approx[], int size, float transient) {
+void writeSolution(char *filename, float x[], float approx[], int size, float transient) {
     // Find the point to start printing from.
     int start = 0;
     for (int i = 0; i < size && !start; ++i) {
@@ -217,21 +201,22 @@ void writeSolution(char filename[], float x[], float approx[], int size, float t
 }
 
 void freeEqConditions(EqConditions *cond) {
+    // Free the initial values array.
     free(cond->inits);
 }
 
-/**
- * @brief Frees the heap memory allocated to a EqSolution struture.
- * 
- * @param sol the EqSolution struture to be freed.
- */
 void freeEqSolution(EqSolution *sol) {
     for (int neuron = 0; neuron < sol->neuronCount; ++neuron) {
         for (int func = 0; func < sol->funcCount; ++func) {
+            // Free the steps arrays.
             free(sol->approx[neuron][func]);
         }
+
+        // Free the function arrays.
         free(sol->approx[neuron]);
     }  
+    
+    // Free the neuron and x arrays.
     free(sol->approx);
     free(sol->x);
 }
