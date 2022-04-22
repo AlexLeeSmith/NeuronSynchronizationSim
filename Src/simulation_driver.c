@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
     myArgs args;
     EqSolution sol;
     Points *spikes;
+    ISI *isis;
 
     // Read command line parameters.
     args = getArgs(argc, argv);
@@ -37,16 +38,19 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Allocate intervals array.
-    //float *intervals = (float *) malloc(numBytes);
+    // Allocate dynamic memory for ISIs.
+    if ((isis = (ISI *) malloc(args.graph.vertexCount * sizeof(ISI))) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
 
     // Run calculations.
     start = getTime();
     sol = runRungeKutta(&getHR, &args.cond, &args.graph, FUNC_COUNT);
     for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
         spikes[neuron] = findSpikes(sol.x, sol.approx[neuron][0], sol.stepCount + 1, args.cond.transient, SPIKE_THRESHOLD);
+        isis[neuron] = calcISI(&spikes[neuron]);
     }
-    //int isiCount = getInterSpikeIntervals(&spikes, intervals);
     elapsed = getTime() - start;
 
     // Print results.
@@ -57,11 +61,17 @@ int main(int argc, char *argv[]) {
     // Write calculations.
     char filename[20];
     for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
+        // Write the neuron approximation.
         sprintf(filename, "Out/approx%d", neuron);
         writeSolution(filename, sol.x, sol.approx[neuron][0], sol.stepCount + 1, args.cond.transient);
+
+        // Write the neuron spikes.
         sprintf(filename, "Out/spikes%d", neuron);
         writePoints(filename, &spikes[neuron]);
-        //writeInterSpikeIntervals("Out/ISIs", intervals, isiCount);
+
+        // Write the neuron inter-spike interval.
+        sprintf(filename, "Out/ISI%d", neuron);
+        writeISI(filename, &isis[neuron]);
     }
     
     // Free heap memory and exit.
@@ -69,9 +79,10 @@ int main(int argc, char *argv[]) {
     freeEqSolution(&sol);
     for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
         freePoints(&spikes[neuron]);
+        freeISI(&isis[neuron]);
     }
     free(spikes);
-    //free(intervals);
+    free(isis);
     exit(EXIT_SUCCESS);
 }
 
