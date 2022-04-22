@@ -36,6 +36,23 @@ Points initPoints(int size) {
     return points;
 }
 
+ISI initISI(int size) {
+    ISI isi = {
+        .size = size
+    };
+
+    // Calculate the number of bytes to be allocated for the array.
+    int numBytes = size * sizeof(float);
+
+    // Allocate heap memory for the intervals array.
+    if ((isi.intervals = (float *) malloc(numBytes)) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
+
+    return isi;
+}
+
 Points findSpikes(float x[], float y[], int size, float transient, float threshold) {
     Points spikes = initPoints(size);
     int spikeCount = 0;
@@ -101,13 +118,15 @@ double getAveFrequency(int spikeCount, int transient, int xEnd, float scale) {
     return ((double) spikeCount / (xEnd - transient)) * scale;
 }
 
-int getInterSpikeIntervals(Points *spikes, float intervals[]) {
+ISI calcISI(Points *spikes) {
+    ISI isi = initISI(spikes->size - 1);
+
     // Find the difference between each spike's x value.
     for (int i = 0; i < spikes->size - 1; ++i) {
-        intervals[i] = spikes->x[i+1] - spikes->x[i];
+        isi.intervals[i] = spikes->x[i+1] - spikes->x[i];
     }
 
-    return spikes->size - 1;
+    return isi;
 }
 
 void writePoints(char filename[], Points *points) {
@@ -127,7 +146,7 @@ void writePoints(char filename[], Points *points) {
     fclose(outfile);
 }
 
-void writeInterSpikeIntervals(char filename[], float intervals[], int size) {
+void writeISI(char filename[], ISI *isi) {
     // Open output file for writing.
     FILE *outfile;
     if ((outfile = fopen(filename, "w")) == NULL) {
@@ -136,8 +155,8 @@ void writeInterSpikeIntervals(char filename[], float intervals[], int size) {
     }
 
     // Begin writing.
-    for (int i = 0; i < size; i++) {
-        fprintf(outfile, "%f\n", intervals[i]);
+    for (int i = 0; i < isi->size; i++) {
+        fprintf(outfile, "%f\n", isi->intervals[i]);
     }  
 
     // Close ouput file.
@@ -148,4 +167,9 @@ void freePoints(Points *points) {
     // Free the x and y arrays.
     free(points->x);
     free(points->y);
+}
+
+void freeISI(ISI *isi) {
+    // Free the intervals array.
+    free(isi->intervals);
 }

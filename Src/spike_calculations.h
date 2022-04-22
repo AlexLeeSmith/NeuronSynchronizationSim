@@ -32,12 +32,36 @@ typedef struct {
 } Points;
 
 /**
+ * @brief A structure of inter-spike intervals.
+ */
+typedef struct {
+    /**
+     * @brief The array of intervals.
+     */
+    float *intervals;
+
+    /**
+     * @brief The size of the intervals arrays.
+     */
+    int size;
+} ISI;
+
+
+/**
  * @brief Initializes and allocates memory for a points struture.
  * 
- * @param size The size of the x and y arrays.
+ * @param size the size of the x and y arrays.
  * @return Points - the initialized points struture.
  */
 Points initPoints(int size);
+
+/**
+ * @brief Initializes and allocates memory for an ISI struture.
+ * 
+ * @param size the size of the intervals arrays.
+ * @return ISI - the initialized ISI struture.
+ */
+ISI initISI(int size);
 
 /**
  * @brief Finds the spikes within the given set of points above a specified treshold.
@@ -63,13 +87,12 @@ Points findSpikes(float x[], float y[], int size, float transient, float thresho
 double getAveFrequency(int spikeCount, int transient, int xEnd, float scale);
 
 /**
- * @brief Finds the inter-spike intervals within the given set of spikes.
+ * @brief Calculates the inter-spike intervals within the given set of spikes.
  * 
  * @param spikes the Points struture where the spikes are stored.
- * @param intervals the buffer array to store the intervals in.
- * @return int - the amount of intervals found.
+ * @return ISI - the ISI struture of the calculated intervals.
  */
-int getInterSpikeIntervals(Points *spikes, float intervals[]);
+ISI calcISI(Points *spikes);
 
 /**
  * @brief Writes a set of points to a file.
@@ -83,10 +106,9 @@ void writePoints(char filename[], Points *points);
  * @brief Writes an array of inter-spike intervals to a file.
  * 
  * @param filename the name of the file to write to.
- * @param intervals the array of intervals to be written.
- * @param size the size of the intervals array.
+ * @param isi the ISI struture to be written
  */
-void writeInterSpikeIntervals(char filename[], float intervals[], int size);
+void writeISI(char filename[], ISI *isi);
 
 /**
  * @brief Frees the heap memory allocated to a Points struture.
@@ -94,5 +116,12 @@ void writeInterSpikeIntervals(char filename[], float intervals[], int size);
  * @param points the Points struture to be freed.
  */
 void freePoints(Points *points);
+
+/**
+ * @brief Frees the heap memory allocated to an ISI struture.
+ * 
+ * @param isi the ISI struture to be freed.
+ */
+void freeISI(ISI *isi);
 
 #endif
