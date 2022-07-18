@@ -23,4 +23,12 @@
  */
 void getHR(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]);
 
+/**
+ * @brief Writes the s value (HR control variable) of each neuron to a file.
+ * 
+ * @param filename the name of the file to write to.
+ * @param neuronCount the number of neurons in the graph.
+ */
+void writeSs(char *filename, int neuronCount);
+
 #endif

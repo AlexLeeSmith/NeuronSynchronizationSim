@@ -9,6 +9,8 @@
  */
 
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define xR -1.56F
 #define r 0.006F
@@ -60,4 +62,22 @@ void getHR(int neuronCount, float inputs[][neuronCount], float curX, float weigh
     result[0] = y - (x*x*x) + (3*x*x) - z + I - calcSyncFactor(inputs[0], weights, neuronCount, myNeuron);
     result[1] = 1 - (5*x*x) - y;
     result[2] = r * (getS(myNeuron, neuronCount, S_LOWER, S_UPPER) * (x - xR) - z);
+}
+
+
+void writeSs(char *filename, int neuronCount) {
+    // Open output file for writing.
+    FILE *outfile;
+    if ((outfile = fopen(filename, "w")) == NULL) {
+        perror("Write Solution");
+        exit(EXIT_FAILURE);
+    }
+    
+    // Begin writing.
+    for (int i = 0; i < neuronCount; ++i) {
+        fprintf(outfile, "%d\t%g\n", i, getS(i, neuronCount, S_LOWER, S_UPPER));   
+    }
+    
+    // Close ouput file.
+    fclose(outfile);
 }

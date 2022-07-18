@@ -73,6 +73,9 @@ int main(int argc, char *argv[]) {
         sprintf(filename, "Out/ISI%d", neuron);
         writeISI(filename, &isis[neuron]);
     }
+
+    // Write the s values of each neuron.
+    writeSs("Out/s_values", sol.neuronCount);
     
     // Free heap memory and exit.
     freeArgs(&args);
