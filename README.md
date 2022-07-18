@@ -2,15 +2,22 @@
 The goal of this project is to simulate a graph of coupled neurons.
 
 ## Contents
-1. [Project Directories](https://github.com/LittleB30/IT287/tree/Dev#project-directories)
-2. [Todo](https://github.com/LittleB30/IT287/tree/Dev#todo)
+1. [Dependencies](https://github.com/LittleB30/IT287/tree/Dev#dependencies)
+2. [Project Directories](https://github.com/LittleB30/IT287/tree/Dev#project-directories)
+3. [Todo](https://github.com/LittleB30/IT287/tree/Dev#todo)
+
+## Dependencies
+1. gcc: Some C compiler to generate an executable.
+2. gnuplot: Used to create graphics of the simulations.
+3. make: Used to compile and clean the workspace.
 
 ## Project Directories
 - Bin: Contains all executable files.
 - Graph: Contains all available input graphs.
 - Out: Contains all output data files.
-- Plot: Contains various plot images created during development.
-  - Scripts: Contains some gnuplot scripts to automate plot creation.
+- Plot: Where all plot images will be saved.
+  - Examples: Sample plot scripts.
+  - Scripts: gnuplot scripts to automate plot creation.
 - Src: Contains all source code files including headers, implementations, and drivers.
 
 ## Todo
