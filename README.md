@@ -19,10 +19,11 @@ The goal of this project is to simulate a graph of coupled neurons.
 - [ ] Add check on findSpikes that approx.size >= 3.
 - [ ] Make getS more efficient.
 - [ ] Add average frequency calculations for all neurons to file (neuronNum aveFreq).
-- [ ] Print s values to a file (neuronNum s)
+- [x] Print s values to a file (neuronNum s)
 - [ ] Breakup complex methods like runRungeKutta.
 - [ ] Fix the weird method declaration of getODEs.
-- [ ] Create more scripts for generating gnuplot images (x approx) (neuronNum spikeX).
+- [x] Gnuplot script for generating (x approx) images.
+- [ ] Gnuplot script for generating (neuronNum spikeX) images.
 - [ ] Create a python script using NetworkX to generate adjacency matrices.
 - [ ] Add logic somewhere to scale the adjacency matrix weights.
 - [ ] Parallelize runRungeKutta where possible.
