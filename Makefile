@@ -9,7 +9,7 @@ SRC=Src/
 OUT=Out/
 FLAGS=-g -Wall
 
-allclean:all cleanObject
+allclean:all clean
 
 all:graph differential numerical spike driver
 	$(CC) $(FLAGS) *.o -o $(BIN)driver $(LIBS)
@@ -29,10 +29,10 @@ spike:$(SRC)spike_calculations.c
 driver:$(SRC)simulation_driver.c
 	$(CC) -c $(SRC)simulation_driver.c
 
-clean:cleanObject cleanDriver
+clean:cleanObject cleanOut
 
 cleanObject:
 	$(RM) *.o
 
-cleanDriver:
-	$(RM) $(BIN)driver $(OUT)approx* $(OUT)spikes* $(OUT)ISIs*
+cleanOut:
+	$(RM) $(OUT)approx* $(OUT)spikes* $(OUT)ISI* $(OUT)s_values
