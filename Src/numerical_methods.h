@@ -118,7 +118,7 @@ EqSolution initEqSolution(float x0, float xEnd, float step, int neuronCount, int
 EqSolution runRungeKutta(void (*getODEs)(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]), EqConditions *cond, Graph *graph, int funcCount);
 
 /**
- * @brief writes the ODE approximation for each step to a file. 
+ * @brief Writes the ODE approximation for each step to a file. 
  * 
  * @param filename the name of the file to write to.
  * @param x an array of steps.
