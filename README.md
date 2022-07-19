@@ -22,8 +22,8 @@ The goal of this project is to simulate a graph of coupled neurons.
 
 ## Todo
 - [ ] Add diffEQ command-line parameter.
-- [ ] Add check on calcISI that spike count >= 2.
-- [ ] Add check on findSpikes that approx.size >= 3.
+- [x] Add check on calcISI that spike count >= 2.
+- [x] Add check on findSpikes that approx.size >= 3.
 - [ ] Make getS more efficient.
 - [x] Add average frequency calculations for all neurons to file (neuronNum aveFreq).
 - [x] Print s values to a file (neuronNum s)
