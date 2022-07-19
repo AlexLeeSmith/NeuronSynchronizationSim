@@ -11,10 +11,10 @@ FLAGS=-g -Wall
 
 allclean:all clean
 
-all:graph differential numerical spike driver
+all:graphs differential numerical spike driver
 	$(CC) $(FLAGS) *.o -o $(BIN)driver $(LIBS)
 
-graph:$(SRC)graph_manipulations.c
+graphs:$(SRC)graph_manipulations.c
 	$(CC) -c $(SRC)graph_manipulations.c 
 
 differential:$(SRC)differential_equations.c
