@@ -54,62 +54,68 @@ ISI initISI(int size) {
 }
 
 Points findSpikes(float x[], float y[], int size, float transient, float threshold) {
-    Points spikes = initPoints(size);
-    int spikeCount = 0;
+    Points spikes;
+    spikes.size = 0;
 
-    // Find the point to start searching from.
-    int start = 0;
-    for (int i = 0; i < size && !start; ++i) {
-        if (x[i] >= transient) {
-            start = i;
-        }        
-    }
+    // Ensure there are at least 3 points.
+    if (size >= 3) {
+        spikes = initPoints(size / 3); // There can be at most one spike for every three points.
+        int spikeCount = 0;
 
-    // // Look for the spike tips (the first point cannot be a spike).
-    // for (int i = 0, j = start; j < size - 2; ++i, ++j) {   
-    //     if (y[j] <= y[j+1] && y[j+1] >= y[j+2]) {
-    //         spikes.x[spikeCount] = x[i+1];
-    //         spikes.y[spikeCount] = y[j+1];
-    //         ++spikeCount;
-    //     }
-    // }
+        // Find the index of the transient value to start from.
+        int start = 0;
+        for (int i = 0; i < size && !start; ++i) {
+            if (x[i] >= transient) {
+                start = i;
+            }        
+        }
 
-    // // Look for the first point above a specifed threshold.
-    // int found = 0;
-    // for (int i = 0, j = start; j < size; ++i, ++j) {
-    //     if (y[j] >= threshold) {
-    //         if (!found) {
-    //             spikes.x[spikeCount] = x[i];
-    //             spikes.y[spikeCount] = y[j];
-    //             ++spikeCount;
-    //             found = 1;
-    //         }
-    //     }
-    //     else {
-    //         found = 0;
-    //     }
-    // }
+        // // Look for the spike tips (the first point cannot be a spike).
+        // for (int i = 0, j = start; j < size - 2; ++i, ++j) {   
+        //     if (y[j] <= y[j+1] && y[j+1] >= y[j+2]) {
+        //         spikes.x[spikeCount] = x[i+1];
+        //         spikes.y[spikeCount] = y[j+1];
+        //         ++spikeCount;
+        //     }
+        // }
 
-    // Look for peaks that appear above the specifed threshold
-    int found = 0;
-    for (int i = 0, j = start; j < size - 2; ++i, ++j) {
-        // Check if the middle point is above the threshold.
-        if (y[j+1] >= threshold) {
-            // Check if this point is a peak.
-            if (!found && y[j] <= y[j+1] && y[j+1] >= y[j+2]) {
-                spikes.x[spikeCount] = x[i+1];
-                spikes.y[spikeCount] = y[j+1];
-                ++spikeCount;
-                found = 1;
+        // // Look for the first point above a specifed threshold.
+        // int found = 0;
+        // for (int i = 0, j = start; j < size; ++i, ++j) {
+        //     if (y[j] >= threshold) {
+        //         if (!found) {
+        //             spikes.x[spikeCount] = x[i];
+        //             spikes.y[spikeCount] = y[j];
+        //             ++spikeCount;
+        //             found = 1;
+        //         }
+        //     }
+        //     else {
+        //         found = 0;
+        //     }
+        // }
+
+        // Look for peaks that appear above the specifed threshold
+        int found = 0;
+        for (int i = 0, j = start; j < size - 2; ++i, ++j) {
+            // Check if the middle point is above the threshold.
+            if (y[j+1] >= threshold) {
+                // Check if this point is a peak.
+                if (!found && y[j] <= y[j+1] && y[j+1] >= y[j+2]) {
+                    spikes.x[spikeCount] = x[i+1];
+                    spikes.y[spikeCount] = y[j+1];
+                    ++spikeCount;
+                    found = 1;
+                }
+            }
+            else {
+                found = 0;
             }
         }
-        else {
-            found = 0;
-        }
-    }
 
-    // Update the spike count.
-    spikes.size = spikeCount;
+        // Update the spike count.
+        spikes.size = spikeCount;
+    }
 
     return spikes;
 }
@@ -120,7 +126,7 @@ float calcAvgFrequency(int spikeCount, int transient, int xEnd, float scale) {
 
 ISI calcISI(Points *spikes) {
     ISI isi;
-    isi.size = -1;
+    isi.size = 0;
 
     // Ensure there are at least 2 spikes.
     if (spikes->size >= 2) {

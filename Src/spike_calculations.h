@@ -71,7 +71,7 @@ ISI initISI(int size);
  * @param size the size of the x and y arrays (must be at least 3).
  * @param transient the x position in which the differential equation starts exhibiting its normal behavior.
  * @param threshold the minimum value a spike must reach.
- * @return Points - the points struture of the found spikes.
+ * @return Points - the points struture of the found spikes. Ensure that the size of the returned Points struct is greater than 0.
  */
 Points findSpikes(float x[], float y[], int size, float transient, float threshold);
 
@@ -90,7 +90,7 @@ float calcAvgFrequency(int spikeCount, int transient, int xEnd, float scale);
  * @brief Calculates the inter-spike intervals within the given set of spikes.
  * 
  * @param spikes the Points struture where the spikes are stored.
- * @return ISI - the ISI struture of the calculated intervals. Ensure that the size of the returned ISI struct is not -1.
+ * @return ISI - the ISI struture of the calculated intervals. Ensure that the size of the returned ISI struct is greater than 0.
  */
 ISI calcISI(Points *spikes);
 
