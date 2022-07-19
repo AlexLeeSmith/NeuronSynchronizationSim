@@ -30,7 +30,7 @@ The goal of this project is to simulate a graph of coupled neurons.
 - [ ] Breakup complex methods like runRungeKutta.
 - [ ] Fix the weird method declaration of getODEs.
 - [x] Gnuplot script for generating (x approx) images.
-- [ ] Gnuplot script for generating (neuronNum spikeX) images.
+- [x] Gnuplot script for generating (neuronNum spikeX) images.
 - [ ] Create a python script using NetworkX to generate adjacency matrices.
 - [ ] Add logic somewhere to scale the adjacency matrix weights.
 - [ ] Parallelize runRungeKutta where possible.
