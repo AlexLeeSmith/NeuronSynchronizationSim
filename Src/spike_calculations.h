@@ -90,7 +90,7 @@ float calcAvgFrequency(int spikeCount, int transient, int xEnd, float scale);
  * @brief Calculates the inter-spike intervals within the given set of spikes.
  * 
  * @param spikes the Points struture where the spikes are stored.
- * @return ISI - the ISI struture of the calculated intervals.
+ * @return ISI - the ISI struture of the calculated intervals. Ensure that the size of the returned ISI struct is not -1.
  */
 ISI calcISI(Points *spikes);
 

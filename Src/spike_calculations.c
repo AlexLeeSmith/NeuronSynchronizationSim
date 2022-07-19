@@ -119,12 +119,18 @@ float calcAvgFrequency(int spikeCount, int transient, int xEnd, float scale) {
 }
 
 ISI calcISI(Points *spikes) {
-    ISI isi = initISI(spikes->size - 1);
+    ISI isi;
+    isi.size = -1;
 
-    // Find the difference between each spike's x value.
-    for (int i = 0; i < spikes->size - 1; ++i) {
-        isi.intervals[i] = spikes->x[i+1] - spikes->x[i];
-    }
+    // Ensure there are at least 2 spikes.
+    if (spikes->size >= 2) {
+        isi = initISI(spikes->size - 1);
+
+        // Find the difference between each spike's x value.
+        for (int i = 0; i < spikes->size - 1; ++i) {
+            isi.intervals[i] = spikes->x[i+1] - spikes->x[i];
+        }
+    }    
 
     return isi;
 }
