@@ -24,7 +24,7 @@ if (ARGC == 1) {
     # Plot all the approximations.
     plot for[i = 0:ARG1-1] "Out/approx".i \
         title sprintf("N%d (s=%s)", i, sValues[i+1]) \
-        with lines
+        with lines linewidth 2
 } else {
     print sprintf("\n\tUsage: -c %s [# of Neurons]\n", ARG0)
 }
