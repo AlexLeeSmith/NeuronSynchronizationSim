@@ -68,7 +68,7 @@ typedef struct {
     int funcCount;
 
     /**
-     * @brief The number of steps in the approximation.
+     * @brief The number of steps taken in the approximation (-1 the size of the x array).
      */
     int stepCount;
 } EqSolution;
