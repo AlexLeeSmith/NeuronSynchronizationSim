@@ -35,4 +35,4 @@ cleanObject:
 	$(RM) *.o
 
 cleanOut:
-	$(RM) $(OUT)approx* $(OUT)spikes* $(OUT)ISI* $(OUT)s_values
+	$(RM) $(OUT)approx* $(OUT)spikes* $(OUT)ISI* $(OUT)s_values $(OUT)avg_freqs
