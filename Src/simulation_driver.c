@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     EqSolution sol;
     Points *spikes;
     ISI *isis;
+    float *avgFreqs;
 
     // Read command line parameters.
     args = getArgs(argc, argv);
@@ -44,19 +45,26 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // Allocate dynamic memory for average frequencies.
+    if ((avgFreqs = (float *) malloc(args.graph.vertexCount * sizeof(float))) == NULL) {
+        perror("malloc() failure");
+        exit(EXIT_FAILURE);
+    }
+
     // Run calculations.
     start = getTime();
     sol = runRungeKutta(&getHR, &args.cond, &args.graph, FUNC_COUNT);
     for (int neuron = 0; neuron < sol.neuronCount; ++neuron) {
         spikes[neuron] = findSpikes(sol.x, sol.approx[neuron][0], sol.stepCount + 1, args.cond.transient, SPIKE_THRESHOLD);
         isis[neuron] = calcISI(&spikes[neuron]);
+        avgFreqs[neuron] = calcAvgFrequency(spikes[neuron].size, args.cond.transient, args.cond.xEnd, 1000.0);
     }
     elapsed = getTime() - start;
 
     // Print results.
     printf("Hindmarsh-Rose (HR) neuronal model:\n");
-    printf("\tElapsed: %f seconds\n", elapsed);
-    //printf("\tAvg Frequency: %f spikes/sec\n\n", getAveFrequency(spikes.size, args.cond.transient, args.cond.xEnd, 1000.0));
+    printf("\t%d neurons and %d steps\n", sol.neuronCount, sol.stepCount);
+    printf("\t%f seconds elapsed\n", elapsed);
 
     // Write calculations.
     char filename[20];
@@ -74,6 +82,9 @@ int main(int argc, char *argv[]) {
         writeISI(filename, &isis[neuron]);
     }
 
+    // Write the average frequency of each neuron.
+    writeAvgFrequencies("Out/avg_freqs", avgFreqs, sol.neuronCount);
+
     // Write the s values of each neuron.
     writeSs("Out/s_values", sol.neuronCount);
     
@@ -86,6 +97,7 @@ int main(int argc, char *argv[]) {
     }
     free(spikes);
     free(isis);
+    free(avgFreqs);
     exit(EXIT_SUCCESS);
 }
 

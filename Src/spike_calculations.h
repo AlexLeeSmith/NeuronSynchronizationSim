@@ -82,9 +82,9 @@ Points findSpikes(float x[], float y[], int size, float transient, float thresho
  * @param transient the x position in which the differential equation starts exhibiting its normal behavior.
  * @param xEnd The final x position.
  * @param scale the factor to scale the result by.
- * @return double - the calculated average frequency.
+ * @return float - the calculated average frequency ((spikeCount / (xEnd - transient)) * scale).
  */
-double getAveFrequency(int spikeCount, int transient, int xEnd, float scale);
+float calcAvgFrequency(int spikeCount, int transient, int xEnd, float scale);
 
 /**
  * @brief Calculates the inter-spike intervals within the given set of spikes.
@@ -106,9 +106,18 @@ void writePoints(char filename[], Points *points);
  * @brief Writes an array of inter-spike intervals to a file.
  * 
  * @param filename the name of the file to write to.
- * @param isi the ISI struture to be written
+ * @param isi the ISI struture to be written.
  */
 void writeISI(char filename[], ISI *isi);
+
+/**
+ * @brief Writes an array of average frequencies to a file.
+ * 
+ * @param filename the name of the file to write to.
+ * @param avgFreqs the array of frequencies to be written.
+ * @param size the number of frequencies.
+ */
+void writeAvgFrequencies(char filename[], float avgFreqs[], int size);
 
 /**
  * @brief Frees the heap memory allocated to a Points struture.

@@ -114,8 +114,8 @@ Points findSpikes(float x[], float y[], int size, float transient, float thresho
     return spikes;
 }
 
-double getAveFrequency(int spikeCount, int transient, int xEnd, float scale) {
-    return ((double) spikeCount / (xEnd - transient)) * scale;
+float calcAvgFrequency(int spikeCount, int transient, int xEnd, float scale) {
+    return ((float) spikeCount / (xEnd - transient)) * scale;
 }
 
 ISI calcISI(Points *spikes) {
@@ -137,8 +137,8 @@ void writePoints(char filename[], Points *points) {
         exit(EXIT_FAILURE);
     }
     
-    // Begin writing.
-    for (int i = 0; i < points->size; i++) {
+    // Begin writing (x - y).
+    for (int i = 0; i < points->size; ++i) {
         fprintf(outfile, "%f\t%f\n", points->x[i], points->y[i]);
     }
 
@@ -150,13 +150,30 @@ void writeISI(char filename[], ISI *isi) {
     // Open output file for writing.
     FILE *outfile;
     if ((outfile = fopen(filename, "w")) == NULL) {
-        perror("Write InterSpike Intervals");
+        perror("Write Inter-Spike Intervals");
         exit(EXIT_FAILURE);
     }
 
-    // Begin writing.
-    for (int i = 0; i < isi->size; i++) {
+    // Begin writing (inter-spike intervals).
+    for (int i = 0; i < isi->size; ++i) {
         fprintf(outfile, "%f\n", isi->intervals[i]);
+    }  
+
+    // Close ouput file.
+    fclose(outfile);
+}
+
+void writeAvgFrequencies(char filename[], float avgFreqs[], int size) {
+    // Open output file for writing.
+    FILE *outfile;
+    if ((outfile = fopen(filename, "w")) == NULL) {
+        perror("Write Average Frequencies");
+        exit(EXIT_FAILURE);
+    }
+
+    // Begin writing (neuron ID - avg freq).
+    for (int i = 0; i < size; ++i) {
+        fprintf(outfile, "%d\t%f\n", i, avgFreqs[i]);
     }  
 
     // Close ouput file.
