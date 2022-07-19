@@ -2,9 +2,9 @@
 The goal of this project is to simulate a graph of coupled neurons.
 
 ## Contents
-1. [Dependencies](https://github.com/LittleB30/IT287/tree/Dev#dependencies)
-2. [Project Directories](https://github.com/LittleB30/IT287/tree/Dev#project-directories)
-3. [Todo](https://github.com/LittleB30/IT287/tree/Dev#todo)
+1. [Dependencies](https://github.com/AlexLeeSmith/NeuronSynchronizationSim/tree/Dev#dependencies)
+2. [Project Directories](https://github.com/AlexLeeSmith/NeuronSynchronizationSim/tree/Dev#project-directories)
+3. [Todo](https://github.com/AlexLeeSmith/NeuronSynchronizationSim/tree/Dev#todo)
 
 ## Dependencies
 1. gcc: Some C compiler to generate an executable.
