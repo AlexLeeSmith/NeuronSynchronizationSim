@@ -51,7 +51,7 @@ float calcSyncFactor(float inputs[], float weights[], int neuronCount, int myNeu
  * @return float - the s value.
  */
 float getS(int myNeuron, int neuronCount, float lowerBound, float upperBound) {
-    return fmodf(((float) myNeuron + lowerBound) + ((float) myNeuron / neuronCount), upperBound);
+    return fmodf(((float) myNeuron) + ((float) myNeuron / neuronCount), upperBound - lowerBound) + lowerBound;
 }
 
 void getHR(int neuronCount, float inputs[][neuronCount], float curX, float weights[], int myNeuron, float result[]) {
