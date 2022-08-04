@@ -6,7 +6,7 @@ if len(argv) == 5:
     rows = int(argv[1])
     columns = int(argv[2])
     coupling_strength = float(argv[3])
-    filename = argv[4]
+    filename = "Graph/" + argv[4]
     nodeCount = rows * columns
 
     # Create 2D graph and relabel to integers instead of coordinates.
@@ -25,8 +25,9 @@ if len(argv) == 5:
                     file.write("0 ")
             file.write("\n")
 else:
-    print(f"\nUsage: {argv[0]} [# rows] [# columns] [coupling strength] [file path]", file=stderr)
+    print(f"\nUsage: {argv[0]} [# rows] [# columns] [coupling strength] [file name]", file=stderr)
     print(f"\tCoupling strength should be <= 1", file=stderr)
+    print(f"\tThe generated file will be saved in the Graph directory", file=stderr)
     exit(1)
 
 
