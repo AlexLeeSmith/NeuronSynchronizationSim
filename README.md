@@ -45,7 +45,7 @@ $ gnuplot -c Plot/Scripts/HR_time_voltage.p 4
 ![Time vs. Voltage of the HR model with 4 neurons](/Plot/Examples/HR_time_voltage(N%3D4).png)
 
 ```
-$ gnuplot -c Plot/Scripts/HR_neruon_spiketime.p 4
+$ gnuplot -c Plot/Scripts/HR_neuron_spiketime.p 4
 ```
 ![Neuron ID vs. Spike Times of the HR model with 4 neurons](/Plot/Examples/HR_neuron_spiketime(N%3D4).png)
 
